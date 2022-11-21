@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""tst_logi_grammar.py - runs the unit tests for the logi-grammar
+"""tst_principia_grammar.py - runs the unit tests for the logi-grammar
 """
 
 import os
@@ -34,7 +34,7 @@ def recompile_grammar(grammar_src, force):
             notify=lambda: print('recompiling ' + grammar_src)):
         print('\nErrors while recompiling "%s":' % grammar_src +
               '\n--------------------------------------\n\n')
-        error_path = os.path.join(grammar_src[:-5] + '_ebnf_ERRORS.txt')
+        error_path = os.path.join(grammar_src[:-5] + '_ebnf_MESSAGES.txt')
         with open(error_path, 'r', encoding='utf-8') as f:
             print(f.read())
         sys.exit(1)
@@ -78,10 +78,10 @@ if __name__ == '__main__':
     if arg.endswith('.ebnf'):
         recompile_grammar(arg, force=True)
     else:
-        recompile_grammar(os.path.join(scriptpath, 'logi.ebnf'),
+        recompile_grammar(os.path.join(scriptpath, 'principia.ebnf'),
                           force=False)
         sys.path.append('.')
-        from logiParser import get_grammar, get_transformer
+        from principiaParser import get_grammar, get_transformer
         error_report = run_grammar_tests(arg, get_grammar, get_transformer)
         if error_report:
             print('\n')
