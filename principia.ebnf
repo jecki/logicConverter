@@ -95,8 +95,8 @@ Not               = _not _affirmation
 _affirmation      = for_all | exists | group | predication | proposition
                   | function | variable | restricted_var | constant
 
-for_all           = _lB variable _rB [_a1] _element  # TODO: unsimplify this!
-exists            = _lB _exists_sign variable _rB [_a1] _element  # TODO: unsimplify this!
+for_all           = _lB variable _rB _a1 formula0  # TODO: unsimplify this!
+exists            = _lB _exists_sign variable _rB _a1 formula0  # TODO: unsimplify this!
 group             = `(` formula `)` | `{` formula `}`
 predication       = relation _lB _individual {"," _individual } _rB
                   | _individual relation _individual
@@ -127,7 +127,7 @@ ifthen          = (`⊃` | `=>`)  [subscript]
 ifonlyif        = (`≡` | `<=>`) [subscript]
 equals          = `=`
 
-subscript       = (variable | `Df`) " "
+subscript       = variable " "
 
 #######################################################################
 #

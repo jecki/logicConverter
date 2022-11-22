@@ -93,13 +93,12 @@ def preprocess_principia(source):
 class principiaGrammar(Grammar):
     r"""Parser for a principia source file.
     """
-    _element = Forward()
     formula = Forward()
     formula0 = Forward()
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "98c65bea8ce29860e8c5dba17ece6084"
+    source_hash__ = "6a80b16ea4b59232f91c027ec5146f50"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -132,7 +131,7 @@ class principiaGrammar(Grammar):
     _dots = Alternative(_d4, _d3, _d2, _d1)
     variable = RegExp('[xyz]')
     equals = Text("=")
-    subscript = Series(Alternative(variable, Text("Df")), Series(Drop(Text(" ")), dwsp__))
+    subscript = Series(variable, Series(Drop(Text(" ")), dwsp__))
     ifonlyif = Series(Alternative(Text("≡"), Text("<=>")), Option(subscript))
     Or = Alternative(Text("∨"), Text("v"))
     relation = RegExp('[QRST]')
@@ -148,11 +147,11 @@ class principiaGrammar(Grammar):
     restricted_var = Series(circumflected, function)
     predication = Alternative(Series(relation, _lB, _individual, ZeroOrMore(Series(Series(Drop(Text(",")), dwsp__), _individual)), _rB), Series(_individual, relation, _individual))
     group = Alternative(Series(Text("("), formula, Text(")")), Series(Text("{"), formula, Text("}")))
-    exists = Series(_lB, _exists_sign, variable, _rB, Option(_a1), _element)
-    for_all = Series(_lB, variable, _rB, Option(_a1), _element)
+    exists = Series(_lB, _exists_sign, variable, _rB, _a1, formula0)
+    for_all = Series(_lB, variable, _rB, _a1, formula0)
     _affirmation = Alternative(for_all, exists, group, predication, proposition, function, variable, restricted_var, constant)
     Not = Series(_not, _affirmation)
-    theorem = Series(_assertion_sign, Option(_dots), formula)
+    _element = Alternative(Not, _affirmation)
     and1 = Alternative(Series(formula0, _a1, formula0), formula0, _element)
     and2 = Alternative(Series(formula1, _a2, formula1), formula1, _element)
     and3 = Alternative(Series(formula2, _a3, formula2), formula2, _element)
@@ -161,11 +160,11 @@ class principiaGrammar(Grammar):
     operator = Alternative(Or, ifthen, ifonlyif, equals)
     axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
     definition = Series(formula, dwsp__, Series(Drop(Text("Df")), dwsp__))
-    _assertion = Alternative(definition, axiom, theorem)
+    theorem = Series(_assertion_sign, Option(_dots), formula)
     numbering = Series(Alternative(Series(Drop(Text("*")), dwsp__), Series(Drop(Text("∗")), dwsp__)), chapter, _cdot, number, dwsp__)
     formula4 = Alternative(Series(and4, _d4, operator, ZeroOrMore(Series(_d4, and4, _d4, operator)), Alternative(Series(_d4, and4), Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and4, _d4), Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d4, and4, ZeroOrMore(Series(_d4, operator, _d4, and4))))
+    _assertion = Alternative(definition, axiom, theorem)
     statement = Series(numbering, _assertion)
-    _element.set(Alternative(Not, _affirmation))
     formula0.set(Series(_element, ZeroOrMore(Series(operator, _element))))
     formula1.set(Alternative(Series(and1, _d1, operator, ZeroOrMore(Series(_d1, and1, _d1, operator)), Alternative(Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and1, _d1), formula0, _element), operator, _d1, and1, ZeroOrMore(Series(_d1, operator, _d1, and1)))))
     formula2.set(Alternative(Series(and2, _d2, operator, ZeroOrMore(Series(_d2, and2, _d2, operator)), Alternative(Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d2, and2, ZeroOrMore(Series(_d2, operator, _d2, and2)))))
