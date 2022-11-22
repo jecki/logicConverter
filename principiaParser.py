@@ -99,7 +99,7 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "ec59f2e8dd39fa16c269b1e51bbdd0b6"
+    source_hash__ = "98c65bea8ce29860e8c5dba17ece6084"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -132,7 +132,7 @@ class principiaGrammar(Grammar):
     _dots = Alternative(_d4, _d3, _d2, _d1)
     variable = RegExp('[xyz]')
     equals = Text("=")
-    subscript = Series(variable, Series(Drop(Text(" ")), dwsp__))
+    subscript = Series(Alternative(variable, Text("Df")), Series(Drop(Text(" ")), dwsp__))
     ifonlyif = Series(Alternative(Text("≡"), Text("<=>")), Option(subscript))
     Or = Alternative(Text("∨"), Text("v"))
     relation = RegExp('[QRST]')

@@ -127,7 +127,7 @@ ifthen          = (`⊃` | `=>`)  [subscript]
 ifonlyif        = (`≡` | `<=>`) [subscript]
 equals          = `=`
 
-subscript       = variable " "
+subscript       = (variable | `Df`) " "
 
 #######################################################################
 #
