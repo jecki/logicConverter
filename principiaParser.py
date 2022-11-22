@@ -98,7 +98,7 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "6a80b16ea4b59232f91c027ec5146f50"
+    source_hash__ = "e592ddd163d7c57d805d113c6eededa1"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -129,16 +129,15 @@ class principiaGrammar(Grammar):
     _d2 = Alternative(Series(Text(":"), Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(":")))
     _d1 = Alternative(Series(Text("."), Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(".")))
     _dots = Alternative(_d4, _d3, _d2, _d1)
-    variable = RegExp('[xyz]')
     equals = Text("=")
-    subscript = Series(variable, Series(Drop(Text(" ")), dwsp__))
-    ifonlyif = Series(Alternative(Text("≡"), Text("<=>")), Option(subscript))
+    ifonlyif = Alternative(Text("≡"), Text("<=>"))
+    ifthen = Alternative(Text("⊃"), Text("=>"))
     Or = Alternative(Text("∨"), Text("v"))
     relation = RegExp('[QRST]')
     function_name = RegExp('[fghϕψχ]')
     constant = RegExp('[abcde]')
     circumflected = Alternative(RegExp('[x̂ŷẑ]'), RegExp('^[xyz]'))
-    ifthen = Series(Alternative(Text("⊃"), Text("=>")), Option(subscript))
+    variable = RegExp('[xyz]')
     proposition = RegExp('[pqrstu]')
     number = Series(RegExp('0*'), _nat_number)
     chapter = Synonym(_nat_number)
@@ -157,7 +156,8 @@ class principiaGrammar(Grammar):
     and3 = Alternative(Series(formula2, _a3, formula2), formula2, _element)
     and4 = Alternative(Series(formula3, _a4, formula3), formula3, _element)
     And = Alternative(and4, and3, and2, and1)
-    operator = Alternative(Or, ifthen, ifonlyif, equals)
+    subscript = Series(variable, Series(Drop(Text(" ")), dwsp__))
+    operator = Alternative(Or, Series(ifthen, Option(subscript)), Series(ifonlyif, Option(subscript)), equals)
     axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
     definition = Series(formula, dwsp__, Series(Drop(Text("Df")), dwsp__))
     theorem = Series(_assertion_sign, Option(_dots), formula)
@@ -236,6 +236,29 @@ def save_and_delete_groups_brackets(path: Path):
     node.result = node.children[1:-1]
 
 
+def process_subscripts(path: Path):
+    node = path[-1]
+    parent = path[-2]
+    variables = []
+    for operator in node.select('operator'):
+        if 'subscript' in operator:
+            variables.append(operator['subscript']['variable'])
+            del operator['subscript']
+    if variables:
+        if parent.name == 'for_all':
+            parent_result = []
+            for child in parent:
+                if child.name == 'variable':
+                    if not any(v.content == child.content for v in variables):
+                        variables.append(child)
+                else:
+                    parent_result.append(child)
+            parent.result = tuple(variables) + tuple(parent.result)
+        else:
+            node.result = tuple(variables) + (Node('formula', node.result).with_pos(node.pos),)
+            node.name = 'for_all'
+
+
 principia_AST_transformation_table = {
     # AST Transformations for the principia-grammar
     # "<": [],  # called for each node before calling its specific rules
@@ -248,7 +271,7 @@ principia_AST_transformation_table = {
     "axiom": [],
     "theorem": [],
     "formula, formula4, formula3, formula2, formula1, formula0":
-        [change_name('formula'), replace_by_single_child],
+        [change_name('formula'), process_subscripts, replace_by_single_child],
     "And, and4, and3, and2, and1": [change_name('And'), replace_by_single_child],
     "_element": [],
     "negation": [],

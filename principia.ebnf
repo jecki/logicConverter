@@ -82,7 +82,8 @@ formula         = formula4 | formula3 | formula2 | formula1 | formula0
 
   formula0        =  _element { operator _element }
 
-operator        = (Or | ifthen | ifonlyif | equals)
+operator        = (Or | ifthen [subscript] | ifonlyif [subscript] | equals)
+  subscript     = variable " "
 
 And             = and4 | and3 | and2 | and1
   and4            = formula3 _a4 formula3 | formula3 | _element
@@ -123,11 +124,9 @@ function_name   = /[fghϕψχ]/        # higher order variable
 relation        = /[QRST]/          # relaction or predication
 
 Or              = `∨` | `v`
-ifthen          = (`⊃` | `=>`)  [subscript]
-ifonlyif        = (`≡` | `<=>`) [subscript]
+ifthen          = (`⊃` | `=>`)
+ifonlyif        = (`≡` | `<=>`)
 equals          = `=`
-
-subscript       = variable " "
 
 #######################################################################
 #
