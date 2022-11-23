@@ -12,12 +12,28 @@ notation of the "Principia Mathematica" as used by Bertrand Russel and Rudolf Ca
 into notations used by contemporary text-books as well as modern computer algebra
 systems.
 
+Status
+------
+
+As of now, logicConverter is in an early pre-alpha-stage and serves as best as a rough proof of concept.
+If can convert some formulars from the Principia Mathematica into:
+
+  1. Abstract Syntax Trees (AST) which conserve the structure of the principia-notation
+  2. Logical Syntax Trees (LST) which represent the "mathematical object" described in
+     the principia-notation, but do not conserve the notational structure of the principia
+  3. Modern-notation-representations of the "mathematical objects" described in the
+     principia-notation
+
+Have a look at "Example.md" to see what this means or run the "tst_principia_grammar.py"-script 
+in this directory by typing "python tst_principia_grammar.py" on the command line to produce 
+some examples in the "tests_grammar/REPORT" sub-directory!
+
 License
 -------
 
 logi is open source software under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
-Copyright YEAR AUTHOR'S NAME <EMAIL>, AFFILIATION
+Copyright 2022 Eckhart Arnold <arnold@badw.de>, Bavarian Academy of Sciences and Humanities
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
