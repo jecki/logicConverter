@@ -8,7 +8,7 @@
 
 
 import collections
-from functools import partial
+from functools import partial, reduce
 import os
 import sys
 from typing import Tuple, List, Union, Any, Optional, Callable, cast
@@ -47,7 +47,7 @@ from DHParser import start_logging, suspend_logging, resume_logging, is_filename
     has_attr, has_parent, ThreadLocalSingletonFactory, Error, canonical_error_strings, \
     has_errors, ERROR, FATAL, set_preset_value, get_preset_value, NEVER_MATCH_PATTERN, \
     gen_find_include_func, preprocess_includes, make_preprocessor, chain_preprocessors, \
-    RootNode, Path
+    RootNode, Path, expand_table
 
 
 #######################################################################
@@ -98,7 +98,7 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "e592ddd163d7c57d805d113c6eededa1"
+    source_hash__ = "1182b2b0eeaa380627c496572098c505"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -238,25 +238,31 @@ def save_and_delete_groups_brackets(path: Path):
 
 def process_subscripts(path: Path):
     node = path[-1]
-    parent = path[-2]
+    parent = path[-2] if len(path) >= 2 else None
     variables = []
     for operator in node.select('operator'):
         if 'subscript' in operator:
-            variables.append(operator['subscript']['variable'])
+            variable = operator['subscript']['variable']
+            variables.append(variable)
             del operator['subscript']
+            operator.attr['subscript'] = variable.content
     if variables:
-        if parent.name == 'for_all':
+        if parent and parent.name == 'for_all':
             parent_result = []
+            subscripted = parent.get_attr('subscripted', '').split(',')
             for child in parent:
                 if child.name == 'variable':
                     if not any(v.content == child.content for v in variables):
                         variables.append(child)
+                        subscripted.append(child.content)
                 else:
                     parent_result.append(child)
             parent.result = tuple(variables) + tuple(parent.result)
+            parent.attr['subscripted'] = ','.join(subscripted)
         else:
             node.result = tuple(variables) + (Node('formula', node.result).with_pos(node.pos),)
             node.name = 'for_all'
+            node.attr['subscripted'] = ','.join(v.content for v in variables)
 
 
 principia_AST_transformation_table = {
@@ -350,187 +356,87 @@ class principiaCompiler(Compiler):
         # initialize your variables here, not in the constructor!
 
     def prepare(self, root: RootNode) -> None:
-        pass
+        assert root.stage == 'ast', root.stage
 
     def finalize(self, result: Any) -> Any:
         if isinstance(self.tree, RootNode):
             root = cast(RootNode, self.tree)
-            root.stage = "compiled"
+            root.stage = "LST"  # logical syntax tree
         return result
+
+    def remove_attributes(self, node):
+        node = self.fallback_compiler(node)
+        node.attr = {}
+        return node
 
     def on_principia(self, node):
         return self.fallback_compiler(node)
 
-    # def on_numbering(self, node):
+    def on_definition(self, node):
+        assert len(node.children) == 1
+        node = self.fallback_compiler(node)
+        assert len(node[0].children) == 2
+        return node
+
+    def on_axiom(self, node):
+        assert len(node.children) == 1
+        return self.remove_attributes(node)
+
+    def on_theorem(self, node):
+        assert len(node.children) ==  1
+        return self.remove_attributes(node)
+
+    def on_formula(self, node):
+        node = self.fallback_compiler(node)
+
+        # structural pre-conditions
+        assert len(node.children) >= 3
+        assert len(node.children) % 2 == 1
+        assert all(item.name == 'operator' for item in node.children[1::2])
+
+        # convert formula to a binary tree
+        left, operator, right = node[0:3]
+        while len(node.children) > 3:
+            left = Node(operator[0].name, (left, right)).with_pos(left.pos)
+            node.result = (left, *node.result[3:])
+            operator, right = node[1:3]
+        node.name = operator[0].name
+        node.result = (left, right)
+        return node
+
+    def on_And(self, node):
+        node = self.fallback_compiler(node)
+        assert len(node.children) >= 2
+        left, right = node[0:2]
+        while len(node.children) > 2:
+            left = Node('And', (left, right)).with_pos(left.pos)
+            node.result = (left, *node[2:])
+            right = node[1]
+        return node
+
+    # def on_Not(self, node):
+    #     node = self.fallback_compiler(node)
+    #     assert len(node.children) >= 1
+    #     if node[0].name == 'group':
+    #         node.result = node[0].result
     #     return node
 
-    # def on_assertion(self, node):
-    #     return node
+    def on_group(self, node):
+        assert len(node.children) == 1
+        node = self.fallback_compiler(node)
+        node.name = node[0].name
+        node.result = node[0].result
+        # node.attr = {}
+        return node
 
-    # def on_definition(self, node):
-    #     return node
+    def on_for_all(self, node):
+        return self.remove_attributes(node)
 
-    # def on_axiom(self, node):
-    #     return node
+    def on_proposition(self, node):
+        return self.remove_attributes(node)
 
-    # def on_theorem(self, node):
-    #     return node
-
-    # def on_formula(self, node):
-    #     return node
-
-    # def on_formula4(self, node):
-    #     return node
-
-    # def on_formula3(self, node):
-    #     return node
-
-    # def on_formula2(self, node):
-    #     return node
-
-    # def on_formula1(self, node):
-    #     return node
-
-    # def on_formula0(self, node):
-    #     return node
-
-    # def on_operator(self, node):
-    #     return node
-
-    # def on_And(self, node):
-    #     return node
-
-    # def on_and4(self, node):
-    #     return node
-
-    # def on_and3(self, node):
-    #     return node
-
-    # def on_and2(self, node):
-    #     return node
-
-    # def on_and1(self, node):
-    #     return node
-
-    # def on__element(self, node):
-    #     return node
-
-    # def on_negation(self, node):
-    #     return node
-
-    # def on_element(self, node):
-    #     return node
-
-    # def on_for_all(self, node):
-    #     return node
-
-    # def on_exists(self, node):
-    #     return node
-
-    # def on_group(self, node):
-    #     return node
-
-    # def on_predication(self, node):
-    #     return node
-
-    # def on_function(self, node):
-    #     return node
-
-    # def on_restricted_var(self, node):
-    #     return node
-
-    # def on_individual(self, node):
-    #     return node
-
-    # def on_chapter(self, node):
-    #     return node
-
-    # def on_number(self, node):
-    #     return node
-
-    # def on_proposition(self, node):
-    #     return node
-
-    # def on_variable(self, node):
-    #     return node
-
-    # def on_circumflected(self, node):
-    #     return node
-
-    # def on_constant(self, node):
-    #     return node
-
-    # def on_function_name(self, node):
-    #     return node
-
-    # def on_relation(self, node):
-    #     return node
-
-    # def on__dots(self, node):
-    #     return node
-
-    # def on__d1(self, node):
-    #     return node
-
-    # def on__d2(self, node):
-    #     return node
-
-    # def on__d3(self, node):
-    #     return node
-
-    # def on__d4(self, node):
-    #     return node
-
-    # def on__nat_number(self, node):
-    #     return node
-
-    # def on__cdot(self, node):
-    #     return node
-
-    # def on__exists_sign(self, node):
-    #     return node
-
-    # def on__unique_sign(self, node):
-    #     return node
-
-    # def on__assertion_sign(self, node):
-    #     return node
-
-    # def on__or(self, node):
-    #     return node
-
-    # def on__ifthen(self, node):
-    #     return node
-
-    # def on__not(self, node):
-    #     return node
-
-    # def on__ifonlyif(self, node):
-    #     return node
-
-    # def on__and(self, node):
-    #     return node
-
-    # def on__a1(self, node):
-    #     return node
-
-    # def on__a2(self, node):
-    #     return node
-
-    # def on__a3(self, node):
-    #     return node
-
-    # def on__a4(self, node):
-    #     return node
-
-    # def on__logical_sign(self, node):
-    #     return node
-
-    # def on__reverse_logical_sign(self, node):
-    #     return node
-
-    # def on__EOF(self, node):
-    #     return node
+    def on_variable(self, node):
+        return self.remove_attributes(node)
 
 
 get_compiler = ThreadLocalSingletonFactory(principiaCompiler)
@@ -545,6 +451,158 @@ def compile_principia(ast):
 # END OF DHPARSER-SECTIONS
 #
 #######################################################################
+
+
+#######################################################################
+#
+# Modern Notation
+#
+######################################################################
+
+Precedence_Table = expand_table({
+    'Not, for_all, exists': 4,
+    'And, Or': 3,
+    'ifthen': 2,
+    'ifonlyif, equals': 1
+})
+
+Logical_Symbols_Table = {
+    'for_all': '∀',
+    'exists': '∃',
+    'equals': '=',
+    'ifonlyif': '≡',
+    'ifthen': '⊃',
+    'Or': '∨',
+    'And': '&',
+    'Not': '∼',
+}
+
+
+class ModernNotation(Compiler):
+    """Compiler for the abstract-syntax-tree of a principia source file.
+    """
+
+    def __init__(self):
+        super(ModernNotation, self).__init__()
+        self.forbid_returning_None = True  # set to False if any compilation-method is allowed to return None
+
+    def reset(self):
+        super().reset()
+        # initialize your variables here, not in the constructor!
+
+    def prepare(self, root: RootNode) -> None:
+        assert root.stage == 'LST'
+
+    def finalize(self, result: Any) -> Any:
+        if isinstance(self.tree, RootNode):
+            root = cast(RootNode, self.tree)
+            root.stage = "modern notation"
+        return result
+
+    def on_principia(self, node) -> str:
+        return '\n'.join(self.compile(child) for child in node.children)
+
+    def on_statement(self, node) -> str:
+        assert len(node.children) == 2
+        return f"{self.compile(node['numbering'])}    {self.compile(node[1])}"
+
+    def on_numbering(self, node) -> str:
+        assert len(node.children) == 2
+        chapter, number = node.result
+        return f"{self.compile(chapter)}.{self.compile(number)}"
+
+    def on_number(self, node) -> str:
+        return node.content
+
+    def on_chapter(self, node) -> str:
+        return node.content
+
+    def on_axiom(self, node) -> str:
+        assert len(node.children) == 1
+        return "⊢  " + self.compile(node[0])
+
+    def on_theorem(self, node) -> str:
+        assert len(node.children) == 1
+        return "⊢  " + self.compile(node[0])
+
+    def on_definition(self, node) -> str:
+        assert len(node.children) == 1
+        equation = node[0]
+        assert equation.name in ('equals', 'ifonlyif')
+        assert len(equation.children) == 2
+        symbol = Logical_Symbols_Table[equation.name]
+        left, right = equation[0:2]
+        return f"{self.compile(left)}  {symbol}df  {self.compile(right)}"
+
+    def unary(self, node, subscript='') -> str:
+        assert len(node.children) == 1, repr(node)
+        argument = node.result[0]
+        arg_precedence = Precedence_Table.get(argument.name, 10)
+        arg_string = self.compile(argument)
+        if arg_precedence < Precedence_Table[node.name]:
+            arg_string = f"({arg_string})"
+        if subscript:  subscript += ' '
+        return f"{Logical_Symbols_Table[node.name]}{subscript}{arg_string}"
+
+    def binary(self, node) -> str:
+        assert len(node.children) == 2
+        left, right = node.result
+        left_precedence = Precedence_Table.get(left.name, 10)
+        node_precedence = Precedence_Table[node.name]
+        right_precedence = Precedence_Table.get(right.name, 10)
+        left_side = self.compile(left)
+        if left_precedence < node_precedence:
+            left_side = f"({left_side})"
+        elif left.has_attr('left') and left.has_attr('right'):
+            left_side = f"{left.attr['left']}{left_side}{left.attr['right']}"
+        right_side = self.compile(right)
+        if right_precedence <= node_precedence:
+            right_side = f"({right_side})"
+        elif right.has_attr('left') and right.has_attr('right'):
+            right_side = f"{right.attr['right']}{right_side}{right.attr['right']}"
+        return f"{left_side} {Logical_Symbols_Table[node.name]} {right_side}"
+
+    def on_for_all(self, node) -> str:
+        subscript = ','.join(v.content for v in node if v.name == 'variable')
+        node.result = (node.result[-1],)
+        return self.unary(node, subscript)
+
+    def on_exists(self, node) -> str:
+        subscript = ','.join(v.content for v in node if v.name == 'variable')
+        node.result = (node.result[-1],)
+        return self.unary(node, subscript)
+
+    def on_Not(self, node) -> str:
+        return self.unary(node)
+
+    def on_equals(self, node) -> str:
+        return self.binary(node)
+
+    def on_ifthen(self, node) -> str:
+        return self.binary(node)
+
+    def on_ifonlyif(self, node) -> str:
+        return self.binary(node)
+
+    def on_Or(self, node) -> str:
+        return self.binary(node)
+
+    def on_And(self, node) -> str:
+        return self.binary(node)
+
+    def on_function(self, node) -> str:
+        return node.content
+
+
+get_modern_notation = ThreadLocalSingletonFactory(ModernNotation)
+
+
+def modern_notation(ast):
+    return get_modern_notation()(ast)
+
+
+#######################################################################
+
 
 RESULT_FILE_EXTENSION = ".sxpr"  # Change this according to your needs!
 

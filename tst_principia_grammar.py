@@ -52,7 +52,8 @@ def run_grammar_tests(fn_pattern, get_grammar, get_transformer):
     error_report = testing.grammar_suite(
         testdir, get_grammar, get_transformer,
         fn_patterns=[fn_pattern], report='REPORT', verbose=True,
-        junctions=set(), show=set())
+        junctions={('ast', get_compiler, 'LST'), ('LST', get_modern_notation, 'modern')},
+        show={'ast', 'LST', 'modern'})  # 'modern'
     return error_report
 
 
@@ -81,7 +82,7 @@ if __name__ == '__main__':
         recompile_grammar(os.path.join(scriptpath, 'principia.ebnf'),
                           force=False)
         sys.path.append('.')
-        from principiaParser import get_grammar, get_transformer
+        from principiaParser import get_grammar, get_transformer, get_compiler, get_modern_notation
         error_report = run_grammar_tests(arg, get_grammar, get_transformer)
         if error_report:
             print('\n')
