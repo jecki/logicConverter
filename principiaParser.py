@@ -8,6 +8,7 @@
 
 
 import collections
+import copy
 from functools import partial, reduce
 import os
 import sys
@@ -532,7 +533,8 @@ modern_notation_actions = expand_table({
         f" {Symbols[path[-1].name]}{path[-1].get_attr('subscript', '')} " \
         f"{' ' if path[-1].has_attr('subscript') else ''}" \
         f"{right}{path[-1].get_attr('right', '')}",
-    'function': lambda path, *args: ''.join(args)
+    'function': lambda path, *args: ''.join(args),
+    '*': lambda path, args:  path[-1].content
     })
 
 
@@ -541,8 +543,11 @@ def get_modern_notation():  return modern_notation
 
 
 def modern_notation(lst: RootNode) -> str:
+    global modern_notation_actions
     assert lst.stage == 'LST'
-    return lst.evaluate(modern_notation_actions, path=[lst])
+    result = lst.evaluate(modern_notation_actions, path=[lst])
+    lst.stage = 'modern'
+    return result
 
 
 modern_junction = ('LST', get_modern_notation, 'modern')
@@ -569,7 +574,8 @@ tex = {
     '{': '\{',
     '}': '\}',
     '=': '{=}',
-    '≡': '{\equiv}'
+    '≡': '{\equiv}',
+    '': ''
 }
 
 
@@ -589,24 +595,27 @@ principia_tex_actions = expand_table({
     'formula, function': lambda path, *args: ''.join(args),
     'operator, proposition': lambda path, arg:
         f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"\
-        f"{tex[path[-1].get_attr('right', '')]}]",
+        f"{tex[path[-1].get_attr('right', '')]}",
     'Or, ifthen, equals, ifonlyif': lambda path, arg: tex[arg],
-    'And': lambda path, *args: ' \\sdot '.join(args),
+    'And': lambda path, *args: ''.join(args),
     'Not': lambda path, arg: tex['∼'] + arg,
     'group, variable, function_name': lambda path, arg:
-        f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}]",
+        f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}",
     'for_all': lambda path, variable, expression:
-        f"{expression}" if path[-1].has_attr('subscripted') else f"({variable}){expression}",
-    'exists': lambda path, variable, expression: f"(\exists{variable}){expression}",
+        f"{expression}" if path[-1].has_attr('subscripted') else f"({variable[0]}){variable[1:]}{expression}",
+    'exists': lambda path, variable, expression: f"(\exists {variable[0]}){variable[1:]}{expression}",
 })
 
 
 def get_principia_tex():  return principia_tex
 
 
-def principia_tex(ast: RootNode) -> str:
-    assert ast.stage == 'ast'
-    return ast.evaluate(principia_tex_actions, [ast])
+def principia_tex(lst: RootNode) -> str:
+    global principia_tex_actions
+    assert lst.stage == 'ast'
+    result = lst.evaluate(copy.deepcopy(principia_tex_actions), path=[lst])
+    lst.stage = 'pm.tex'
+    return result
 
 
 principia_tex_junction = ('ast', get_principia_tex, 'pm.tex')

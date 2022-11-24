@@ -16,7 +16,7 @@ if scriptpath not in sys.path:
 
 try:
     from DHParser.configuration import access_presets, set_preset_value, \
-        finalize_presets
+        finalize_presets, read_local_config
     from DHParser import dsl
     import DHParser.log
     from DHParser import testing
@@ -58,6 +58,7 @@ def run_grammar_tests(fn_pattern, get_grammar, get_transformer):
 
 
 if __name__ == '__main__':
+    read_local_config('dhparser.ini')
     argv = sys.argv[:]
     if len(argv) > 1 and sys.argv[1] == "--debug":
         DEBUG = True
