@@ -47,7 +47,7 @@ from DHParser import start_logging, suspend_logging, resume_logging, is_filename
     has_attr, has_parent, ThreadLocalSingletonFactory, Error, canonical_error_strings, \
     has_errors, ERROR, FATAL, set_preset_value, get_preset_value, NEVER_MATCH_PATTERN, \
     gen_find_include_func, preprocess_includes, make_preprocessor, chain_preprocessors, \
-    RootNode, Path, expand_table
+    RootNode, Path, expand_table, pick_from_path
 
 
 #######################################################################
@@ -343,6 +343,15 @@ def transform_principia(cst):
 #
 #######################################################################
 
+
+Precedence_Table = expand_table({
+    'Not, for_all, exists': 4,
+    'And, Or': 3,
+    'ifthen': 2,
+    'ifonlyif, equals': 1
+})
+
+
 class principiaCompiler(Compiler):
     """Compiler for the abstract-syntax-tree of a principia source file.
     """
@@ -369,6 +378,27 @@ class principiaCompiler(Compiler):
         node.attr = {}
         return node
 
+    def brackets_unary(self, node):
+        # assert len(node.children) == 1, node.as_sxpr()
+        argument = node.result[-1]
+        arg_precedence = Precedence_Table.get(argument.name, 10)
+        if arg_precedence < Precedence_Table[node.name]:
+            argument.attr['left'] = '('
+            argument.attr['right'] = ')'
+
+    def brackets_binary(self, node):
+        assert len(node.children) == 2, node.as_sxpr()
+        left, right = node.result
+        left_precedence = Precedence_Table.get(left.name, 10)
+        node_precedence = Precedence_Table[node.name]
+        right_precedence = Precedence_Table.get(right.name, 10)
+        if left_precedence < node_precedence:
+            left.attr['left'] = '('
+            left.attr['right'] = ')'
+        if right_precedence <= node_precedence:
+            right.attr['left'] = '('
+            right.attr['right'] = ')'
+
     def on_principia(self, node):
         return self.fallback_compiler(node)
 
@@ -376,6 +406,7 @@ class principiaCompiler(Compiler):
         assert len(node.children) == 1
         node = self.fallback_compiler(node)
         assert len(node[0].children) == 2
+        node[0].attr['subscript'] = 'df'
         return node
 
     def on_axiom(self, node):
@@ -402,6 +433,7 @@ class principiaCompiler(Compiler):
             operator, right = node[1:3]
         node.name = operator[0].name
         node.result = (left, right)
+        self.brackets_binary(node)
         return node
 
     def on_And(self, node):
@@ -412,25 +444,33 @@ class principiaCompiler(Compiler):
             left = Node('And', (left, right)).with_pos(left.pos)
             node.result = (left, *node[2:])
             right = node[1]
+        self.brackets_binary(node)
         return node
-
-    # def on_Not(self, node):
-    #     node = self.fallback_compiler(node)
-    #     assert len(node.children) >= 1
-    #     if node[0].name == 'group':
-    #         node.result = node[0].result
-    #     return node
 
     def on_group(self, node):
         assert len(node.children) == 1
         node = self.fallback_compiler(node)
         node.name = node[0].name
+        if pick_from_path(self.path, "definition") is None:
+            node.attr = {}
+        node.attr.update(node[0].attr)
         node.result = node[0].result
-        # node.attr = {}
+        return node
+
+    def on_Not(self, node):
+        node = self.fallback_compiler(node)
+        self.brackets_unary(node)
         return node
 
     def on_for_all(self, node):
-        return self.remove_attributes(node)
+        node = self.remove_attributes(node)
+        self.brackets_unary(node)
+        return node
+
+    def on_exists(self, node):
+        node = self.remove_attributes(node)
+        self.brackets_unary(node)
+        return node
 
     def on_proposition(self, node):
         return self.remove_attributes(node)
@@ -446,6 +486,9 @@ def compile_principia(ast):
     return get_compiler()(ast)
 
 
+LST_junction = ('ast', get_compiler, 'LST')
+
+
 #######################################################################
 #
 # END OF DHPARSER-SECTIONS
@@ -459,14 +502,8 @@ def compile_principia(ast):
 #
 ######################################################################
 
-Precedence_Table = expand_table({
-    'Not, for_all, exists': 4,
-    'And, Or': 3,
-    'ifthen': 2,
-    'ifonlyif, equals': 1
-})
 
-Logical_Symbols_Table = {
+Symbols = {
     'for_all': '∀',
     'exists': '∃',
     'equals': '=',
@@ -478,127 +515,101 @@ Logical_Symbols_Table = {
 }
 
 
-class ModernNotation(Compiler):
-    """Compiler for the abstract-syntax-tree of a principia source file.
-    """
-
-    def __init__(self):
-        super(ModernNotation, self).__init__()
-        self.forbid_returning_None = True  # set to False if any compilation-method is allowed to return None
-
-    def reset(self):
-        super().reset()
-        # initialize your variables here, not in the constructor!
-
-    def prepare(self, root: RootNode) -> None:
-        assert root.stage == 'LST'
-
-    def finalize(self, result: Any) -> Any:
-        if isinstance(self.tree, RootNode):
-            root = cast(RootNode, self.tree)
-            root.stage = "modern notation"
-        return result
-
-    def on_principia(self, node) -> str:
-        return '\n'.join(self.compile(child) for child in node.children)
-
-    def on_statement(self, node) -> str:
-        assert len(node.children) == 2
-        return f"{self.compile(node['numbering'])}    {self.compile(node[1])}"
-
-    def on_numbering(self, node) -> str:
-        assert len(node.children) == 2
-        chapter, number = node.result
-        return f"{self.compile(chapter)}.{self.compile(number)}"
-
-    def on_number(self, node) -> str:
-        return node.content
-
-    def on_chapter(self, node) -> str:
-        return node.content
-
-    def on_axiom(self, node) -> str:
-        assert len(node.children) == 1
-        return "⊢  " + self.compile(node[0])
-
-    def on_theorem(self, node) -> str:
-        assert len(node.children) == 1
-        return "⊢  " + self.compile(node[0])
-
-    def on_definition(self, node) -> str:
-        assert len(node.children) == 1
-        equation = node[0]
-        assert equation.name in ('equals', 'ifonlyif')
-        assert len(equation.children) == 2
-        symbol = Logical_Symbols_Table[equation.name]
-        left, right = equation[0:2]
-        return f"{self.compile(left)}  {symbol}df  {self.compile(right)}"
-
-    def unary(self, node, subscript='') -> str:
-        assert len(node.children) == 1, repr(node)
-        argument = node.result[0]
-        arg_precedence = Precedence_Table.get(argument.name, 10)
-        arg_string = self.compile(argument)
-        if arg_precedence < Precedence_Table[node.name]:
-            arg_string = f"({arg_string})"
-        if subscript:  subscript += ' '
-        return f"{Logical_Symbols_Table[node.name]}{subscript}{arg_string}"
-
-    def binary(self, node) -> str:
-        assert len(node.children) == 2
-        left, right = node.result
-        left_precedence = Precedence_Table.get(left.name, 10)
-        node_precedence = Precedence_Table[node.name]
-        right_precedence = Precedence_Table.get(right.name, 10)
-        left_side = self.compile(left)
-        if left_precedence < node_precedence:
-            left_side = f"({left_side})"
-        elif left.has_attr('left') and left.has_attr('right'):
-            left_side = f"{left.attr['left']}{left_side}{left.attr['right']}"
-        right_side = self.compile(right)
-        if right_precedence <= node_precedence:
-            right_side = f"({right_side})"
-        elif right.has_attr('left') and right.has_attr('right'):
-            right_side = f"{right.attr['right']}{right_side}{right.attr['right']}"
-        return f"{left_side} {Logical_Symbols_Table[node.name]} {right_side}"
-
-    def on_for_all(self, node) -> str:
-        subscript = ','.join(v.content for v in node if v.name == 'variable')
-        node.result = (node.result[-1],)
-        return self.unary(node, subscript)
-
-    def on_exists(self, node) -> str:
-        subscript = ','.join(v.content for v in node if v.name == 'variable')
-        node.result = (node.result[-1],)
-        return self.unary(node, subscript)
-
-    def on_Not(self, node) -> str:
-        return self.unary(node)
-
-    def on_equals(self, node) -> str:
-        return self.binary(node)
-
-    def on_ifthen(self, node) -> str:
-        return self.binary(node)
-
-    def on_ifonlyif(self, node) -> str:
-        return self.binary(node)
-
-    def on_Or(self, node) -> str:
-        return self.binary(node)
-
-    def on_And(self, node) -> str:
-        return self.binary(node)
-
-    def on_function(self, node) -> str:
-        return node.content
+modern_notation_actions = expand_table({
+    'principia': lambda path, *args: '\n'.join(args),
+    'statement': lambda path, numbering, assertion: f"{numbering}    {assertion}",
+    'numbering': lambda path, chapter, number: f"{chapter}.{number}",
+    'number, chapter, definition': lambda path, content: content,
+    'axiom, theorem': lambda path, formula: formula,
+    'for_all, exists': lambda path, *args: \
+        f"{Symbols[path[-1].name]}{','.join(args[:-1]) + (' ' if args[:-1] else '')}{args[-1]}",
+    'Not': lambda path, arg: f"{Symbols[path[-1].name]}{arg}",
+    'ifthen, Or, And': lambda path, left, right: f"{path[-1].get_attr('left', '')}{left}" \
+        f" {Symbols[path[-1].name]} {right}{path[-1].get_attr('right', '')}",
+    'equals, ifonlyif': lambda path, left, right: \
+        f"{path[-1].get_attr('left', '')}{left}" \
+        f"{' ' if path[-1].has_attr('subscript') else ''}" \
+        f" {Symbols[path[-1].name]}{path[-1].get_attr('subscript', '')} " \
+        f"{' ' if path[-1].has_attr('subscript') else ''}" \
+        f"{right}{path[-1].get_attr('right', '')}",
+    'function': lambda path, *args: ''.join(args)
+    })
 
 
-get_modern_notation = ThreadLocalSingletonFactory(ModernNotation)
+
+def get_modern_notation():  return modern_notation
 
 
-def modern_notation(ast):
-    return get_modern_notation()(ast)
+def modern_notation(lst: RootNode) -> str:
+    assert lst.stage == 'LST'
+    return lst.evaluate(modern_notation_actions, path=[lst])
+
+
+modern_junction = ('LST', get_modern_notation, 'modern')
+
+
+#######################################################################
+#
+# Principia TeX
+#
+######################################################################
+
+tex = {
+    '⊢': r'\vdash ',
+    '.': r'\ldot ',
+    ':': r'\colon ',
+    '.:': r'\ldot\colon ',
+    ':.': r'\colon\ldot ',
+    '::': r'\colon\colon ',
+    '⊃': r'{\supset}',
+    '∨': r'\vee ',
+    '∼': r'\osim ',
+    '(': '(',
+    ')': ')',
+    '{': '\{',
+    '}': '\}',
+    '=': '{=}',
+    '≡': '{\equiv}'
+}
+
+
+def subscript(node)->str:
+    sc = node.get_attr('subscript', '')
+    return f"_{{{sc} }}" if sc else ''
+
+
+principia_tex_actions = expand_table({
+    'principia': lambda path, *args: '\\[\n' + '\n\n'.join(args) + '\n\\]',
+    'statement': lambda path, numbering, assertion: f"{numbering}    {assertion}",
+    'numbering': lambda path, chapter, number: f"\\tag*{{∗{number}⋅{chapter}}}",
+    'number, chapter': lambda path, content: content,
+    'axiom': lambda path, formula: f"{tex['⊢']} {tex[':']}  {formula} \\quad Pp",
+    'definition':  lambda path, formula: f"{tex['⊢']} {formula} \\quad Df",
+    'theorem': lambda path, formula: f"{{\\vdash}} {tex[':']}  {formula}",
+    'formula, function': lambda path, *args: ''.join(args),
+    'operator, proposition': lambda path, arg:
+        f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"\
+        f"{tex[path[-1].get_attr('right', '')]}]",
+    'Or, ifthen, equals, ifonlyif': lambda path, arg: tex[arg],
+    'And': lambda path, *args: ' \\sdot '.join(args),
+    'Not': lambda path, arg: tex['∼'] + arg,
+    'group, variable, function_name': lambda path, arg:
+        f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}]",
+    'for_all': lambda path, variable, expression:
+        f"{expression}" if path[-1].has_attr('subscripted') else f"({variable}){expression}",
+    'exists': lambda path, variable, expression: f"(\exists{variable}){expression}",
+})
+
+
+def get_principia_tex():  return principia_tex
+
+
+def principia_tex(ast: RootNode) -> str:
+    assert ast.stage == 'ast'
+    return ast.evaluate(principia_tex_actions, [ast])
+
+
+principia_tex_junction = ('ast', get_principia_tex, 'pm.tex')
 
 
 #######################################################################
