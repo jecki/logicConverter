@@ -1,4 +1,4 @@
-This "proof-of-concepts" demonstrates the automatic translation of formulae 
+This "proof-of-concept" demonstrates the automatic translation of formulae 
 in the notation of the Russell's and Whitehead's Principia Mathematica (PM) 
 into:
 
