@@ -16,17 +16,20 @@ Status
 ------
 
 As of now, logicConverter is in an early pre-alpha-stage and serves as best as a rough proof of concept.
-If can convert some formulars from the Principia Mathematica into:
+It can convert some formulars from the Principia Mathematica into:
 
   1. Abstract Syntax Trees (AST) which conserve the structure of the principia-notation
   2. Logical Syntax Trees (LST) which represent the "mathematical object" described in
      the principia-notation, but do not conserve the notational structure of the principia
   3. Modern-notation-representations of the "mathematical objects" described in the
      principia-notation
+  4. TeX-representation of the original principia mathematica notation 
 
 Have a look at "Example.md" to see what this means or run the "tst_principia_grammar.py"-script 
 in this directory by typing "python tst_principia_grammar.py" on the command line to produce 
 some examples in the "tests_grammar/REPORT" sub-directory!
+
+Requires the latest development branch of [DHParser](https://gitlab.lrz.de/badw-it/DHParser/-/tree/development)!
 
 License
 -------

@@ -559,7 +559,7 @@ modern_junction = ('LST', get_modern_notation, 'modern')
 #
 ######################################################################
 
-tex = {
+pm_tex = {
     '⊢': r'\vdash ',
     '.': r'\ldot ',
     ':': r'\colon ',
@@ -577,6 +577,8 @@ tex = {
     '≡': '{\equiv}',
     '': ''
 }
+
+tex = pm_tex
 
 
 def subscript(node)->str:
@@ -619,6 +621,50 @@ def principia_tex(lst: RootNode) -> str:
 
 
 principia_tex_junction = ('ast', get_principia_tex, 'pm.tex')
+
+
+#######################################################################
+#
+# Moden TeX
+#
+######################################################################
+
+
+modern_tex_actions = expand_table({
+    'principia': lambda path, *args: '\\[\n' + '\n\n'.join(args) + '\n\\]',
+    'statement': lambda path, numbering, assertion: f"{numbering}    {assertion}",
+    'numbering': lambda path, chapter, number: f"\\tag*{{∗{number}⋅{chapter}}}",
+    'number, chapter': lambda path, content: content,
+    'axiom': lambda path, formula: f"{tex['⊢']} {tex[':']}  {formula} \\quad Pp",
+    'definition':  lambda path, formula: f"{tex['⊢']} {formula} \\quad Df",
+    'theorem': lambda path, formula: f"{{\\vdash}} {tex[':']}  {formula}",
+    'formula, function': lambda path, *args: ''.join(args),
+    'operator, proposition': lambda path, arg:
+        f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"\
+        f"{tex[path[-1].get_attr('right', '')]}",
+    'Or, ifthen, equals, ifonlyif': lambda path, arg: tex[arg],
+    'And': lambda path, *args: ''.join(args),
+    'Not': lambda path, arg: tex['∼'] + arg,
+    'group, variable, function_name': lambda path, arg:
+        f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}",
+    'for_all': lambda path, variable, expression:
+        f"{expression}" if path[-1].has_attr('subscripted') else f"({variable[0]}){variable[1:]}{expression}",
+    'exists': lambda path, variable, expression: f"(\exists {variable[0]}){variable[1:]}{expression}",
+})
+
+
+def get_modern_tex():  return modern_tex
+
+
+def modern_tex(lst: RootNode) -> str:
+    global principia_tex_actions
+    assert lst.stage == 'ast'
+    result = lst.evaluate(copy.deepcopy(principia_tex_actions), path=[lst])
+    lst.stage = 'pm.tex'
+    return result
+
+
+modern_tex_junction = ('lst', get_principia_tex, 'modern.tex')
 
 
 #######################################################################
