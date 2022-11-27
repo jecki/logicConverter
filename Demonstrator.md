@@ -2,16 +2,19 @@ This "proof-of-concept" demonstrates the automatic translation of formulae
 in the notation of the Russell's and Whitehead's Principia Mathematica (PM) 
 into:
 
-a) the AST (the abstract syntax tree) which resembles the PM formula in its 
+1. the AST (the abstract syntax tree) which resembles the PM formula in its 
    concrete textual form ("Textgestalt"). This corresponds to the 
    presentation form in MathML
-b) the LST (logical syntax tree) which resembles the abstract logical 
+
+2. the LST (logical syntax tree) which resembles the abstract logical 
    structure of the formula or the "mathematical object" described 
    by the formula. This corresponds to the notation of "mathematical
    object" in MathXML. 
-c) modern: A unicode based serialization of b) in modern notation (with
+
+3. modern: A unicode based serialization of b) in modern notation (with
    some restrictions, since subscripts und superscripts a printed inline)
-d) pm.tex: A translation of the principia notation into TeX's math-mode.
+
+4. pm.tex: A translation of the principia notation into TeX's math-mode.
    In fact, this is a serialization of the AST as TeX-source.
 
 This should suffice to demonstrate the feasibility and at least some of the
@@ -19,21 +22,21 @@ capabilities of the approach of automatic conversion. Further targets
 could most probably be implemented without much effort 
 (but haven't been done, yet):
 
-e) modern.tex: A serialization of the LST in modern notation in TeX
+5. modern.tex: A serialization of the LST in modern notation in TeX
 
-f) PM MathML: The presentation form of the PM-notation in MathML
+6. PM MathML: The presentation form of the PM-notation in MathML
    (if MathML is to be supported, say, for archiving purposes.)
 
-e) MathML mathematical object: A conversion of the LST to MathML.
+7. MathML mathematical object: A conversion of the LST to MathML.
 
-g) modern MathML: The presentation form of the modern notation of 
+8. modern MathML: The presentation form of the modern notation of 
    the same form in math ML (if Math ML should be supported)
 
-h) coq or any other computer algebra system that offers sufficient 
+9. coq or any other computer algebra system that offers sufficient 
    support for formal logic to digest Carnap's formulae. (SageMath
    unfortunately does not.)
 
-i) metamath.org: might be very much in the spirit of Carnap...
+10. metamath.org: might be very much in the spirit of Carnap...
 
 
 Test of parser: "principia"
