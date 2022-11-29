@@ -94,12 +94,13 @@ def preprocess_principia(source):
 class principiaGrammar(Grammar):
     r"""Parser for a principia source file.
     """
+    and1 = Forward()
     formula = Forward()
     formula0 = Forward()
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "1182b2b0eeaa380627c496572098c505"
+    source_hash__ = "53e3fc1225332300c09f0a7534a6e9d1"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -147,12 +148,12 @@ class principiaGrammar(Grammar):
     restricted_var = Series(circumflected, function)
     predication = Alternative(Series(relation, _lB, _individual, ZeroOrMore(Series(Series(Drop(Text(",")), dwsp__), _individual)), _rB), Series(_individual, relation, _individual))
     group = Alternative(Series(Text("("), formula, Text(")")), Series(Text("{"), formula, Text("}")))
-    exists = Series(_lB, _exists_sign, variable, _rB, _a1, formula0)
+    exists = Series(_lB, _exists_sign, variable, _rB, _a1, and1)
     for_all = Series(_lB, variable, _rB, _a1, formula0)
     _affirmation = Alternative(for_all, exists, group, predication, proposition, function, variable, restricted_var, constant)
     Not = Series(_not, _affirmation)
     _element = Alternative(Not, _affirmation)
-    and1 = Alternative(Series(formula0, _a1, formula0), formula0, _element)
+    theorem = Series(_assertion_sign, Option(_dots), formula)
     and2 = Alternative(Series(formula1, _a2, formula1), formula1, _element)
     and3 = Alternative(Series(formula2, _a3, formula2), formula2, _element)
     and4 = Alternative(Series(formula3, _a4, formula3), formula3, _element)
@@ -161,15 +162,15 @@ class principiaGrammar(Grammar):
     operator = Alternative(Or, Series(ifthen, Option(subscript)), Series(ifonlyif, Option(subscript)), equals)
     axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
     definition = Series(formula, dwsp__, Series(Drop(Text("Df")), dwsp__))
-    theorem = Series(_assertion_sign, Option(_dots), formula)
-    numbering = Series(Alternative(Series(Drop(Text("*")), dwsp__), Series(Drop(Text("∗")), dwsp__)), chapter, _cdot, number, dwsp__)
-    formula4 = Alternative(Series(and4, _d4, operator, ZeroOrMore(Series(_d4, and4, _d4, operator)), Alternative(Series(_d4, and4), Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and4, _d4), Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d4, and4, ZeroOrMore(Series(_d4, operator, _d4, and4))))
     _assertion = Alternative(definition, axiom, theorem)
+    numbering = Series(Alternative(Series(Drop(Text("*")), dwsp__), Series(Drop(Text("∗")), dwsp__)), chapter, _cdot, number, dwsp__)
+    formula4 = Alternative(Series(and4, _d4, operator, ZeroOrMore(Series(_d4, and4, _d4, operator)), Alternative(Series(_d4, and4), Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and4, _d4), Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d4, and4, ZeroOrMore(Series(_d4, operator, _d4, and4))), and4)
     statement = Series(numbering, _assertion)
+    and1.set(Alternative(Series(formula0, _a1, formula0), formula0, _element))
     formula0.set(Series(_element, ZeroOrMore(Series(operator, _element))))
-    formula1.set(Alternative(Series(and1, _d1, operator, ZeroOrMore(Series(_d1, and1, _d1, operator)), Alternative(Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and1, _d1), formula0, _element), operator, _d1, and1, ZeroOrMore(Series(_d1, operator, _d1, and1)))))
-    formula2.set(Alternative(Series(and2, _d2, operator, ZeroOrMore(Series(_d2, and2, _d2, operator)), Alternative(Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d2, and2, ZeroOrMore(Series(_d2, operator, _d2, and2)))))
-    formula3.set(Alternative(Series(and3, _d3, operator, ZeroOrMore(Series(_d3, and3, _d3, operator)), Alternative(Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d3, and3, ZeroOrMore(Series(_d3, operator, _d3, and3)))))
+    formula1.set(Alternative(Series(and1, _d1, operator, ZeroOrMore(Series(_d1, and1, _d1, operator)), Alternative(Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and1, _d1), formula0, _element), operator, _d1, and1, ZeroOrMore(Series(_d1, operator, _d1, and1))), and1))
+    formula2.set(Alternative(Series(and2, _d2, operator, ZeroOrMore(Series(_d2, and2, _d2, operator)), Alternative(Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d2, and2, ZeroOrMore(Series(_d2, operator, _d2, and2))), and2))
+    formula3.set(Alternative(Series(and3, _d3, operator, ZeroOrMore(Series(_d3, and3, _d3, operator)), Alternative(Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d3, and3, ZeroOrMore(Series(_d3, operator, _d3, and3))), and3))
     formula.set(Alternative(formula4, formula3, formula2, formula1, formula0))
     principia = Series(dwsp__, ZeroOrMore(statement), _EOF)
     root__ = TreeReduction(principia, CombinedParser.MERGE_LEAVES)
@@ -536,7 +537,6 @@ modern_notation_actions = expand_table({
     'function': lambda path, *args: ''.join(args),
     '*': lambda path, args:  path[-1].content
     })
-
 
 
 def get_modern_notation():  return modern_notation

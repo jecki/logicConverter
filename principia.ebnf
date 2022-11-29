@@ -64,28 +64,32 @@ formula         = formula4 | formula3 | formula2 | formula1 | formula0
                     (_d4 and4 | _d3 and3 | _d2 and2 | _d1 and1 | formula0 | _element)
                   | (and4 _d4 | and3 _d3 | and2 _d2 | and1 _d1 | formula0 | _element)
                     operator _d4 and4 { _d4 operator _d4 and4 }
+                  | and4
 
   formula3        = and3 _d3 operator { _d3 and3 _d3 operator }
                     (_d3 and3 | _d2 and2 | _d1 and1 | formula0 | _element)
                   | (and3 _d3 | and2 _d2 | and1 _d1 | formula0 | _element)
                     operator _d3 and3 { _d3 operator _d3 and3 }
+                  | and3
 
   formula2        = and2 _d2 operator { _d2 and2 _d2 operator }
                     (_d2 and2 | _d1 and1 | formula0 | _element)
                   | (and2 _d2 | and1 _d1 | formula0 | _element)
                     operator _d2 and2 { _d2 operator _d2 and2 }
+                  | and2
 
   formula1        = and1 _d1 operator { _d1 and1 _d1 operator }
                     (_d1 and1 | formula0 | _element)
                   | (and1 _d1 | formula0 | _element)
                     operator _d1 and1 { _d1 operator _d1 and1 }
+                  | and1
 
   formula0        =  _element { operator _element }
 
 operator        = (Or | ifthen [subscript] | ifonlyif [subscript] | equals)
   subscript     = variable " "
 
-And             = and4 | and3 | and2 | and1
+And             = and4 | and3 | and2 | and1  # TODO: and-connections with more than two parts
   and4            = formula3 _a4 formula3 | formula3 | _element
   and3            = formula2 _a3 formula2 | formula2 | _element
   and2            = formula1 _a2 formula1 | formula1 | _element
@@ -97,7 +101,7 @@ _affirmation      = for_all | exists | group | predication | proposition
                   | function | variable | restricted_var | constant
 
 for_all           = _lB variable _rB _a1 formula0  # TODO: unsimplify this!
-exists            = _lB _exists_sign variable _rB _a1 formula0  # TODO: unsimplify this!
+exists            = _lB _exists_sign variable _rB _a1 and1  # TODO: unsimplify this!
 group             = `(` formula `)` | `{` formula `}`
 predication       = relation _lB _individual {"," _individual } _rB
                   | _individual relation _individual
