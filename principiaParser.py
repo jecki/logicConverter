@@ -100,7 +100,7 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "53e3fc1225332300c09f0a7534a6e9d1"
+    source_hash__ = "c2dd129187bde369519135aabf58f2fd"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
