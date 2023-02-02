@@ -89,7 +89,7 @@ formula         = formula4 | formula3 | formula2 | formula1 | formula0
 operator        = (Or | ifthen [subscript] | ifonlyif [subscript] | equals)
   subscript     = variable " "
 
-And             = and4 | and3 | and2 | and1  # TODO: and-connections with more than two parts
+# And             = and4 | and3 | and2 | and1  # TODO: and-connections with more than two parts
   and4            = formula3 _a4 formula3 | formula3 | _element
   and3            = formula2 _a3 formula2 | formula2 | _element
   and2            = formula1 _a2 formula1 | formula1 | _element
@@ -148,12 +148,12 @@ _nat_number     = /[1-9]\d*/
 _cdot           = /[·⋅]/ | `.` &_nat_number
 
 _exists_sign    = `∃` | `€`
-_unique_sign    = `E`
+# _unique_sign    = `E`
 
 _assertion_sign = `⊢` | `|-`
 _not            = `∼` | `~`
 
-_and            = _a4 | _a3 | _a2 | _a1
+# _and            = _a4 | _a3 | _a2 | _a1
   _a1           = `.` !_logical_connector
   _a2           = `:` !_logical_connector
   _a3           = (`.:` | `:.`) !_logical_connector

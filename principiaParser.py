@@ -100,7 +100,7 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "c2dd129187bde369519135aabf58f2fd"
+    source_hash__ = "ebc4a6a1d8a0e77ca242c5ce3ba2134b"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -119,10 +119,8 @@ class principiaGrammar(Grammar):
     _a3 = Series(Alternative(Text(".:"), Text(":.")), NegativeLookahead(_logical_connector))
     _a2 = Series(Text(":"), NegativeLookahead(_logical_connector))
     _a1 = Series(Text("."), NegativeLookahead(_logical_connector))
-    _and = Alternative(_a4, _a3, _a2, _a1)
     _not = Drop(Alternative(Text("∼"), Text("~")))
     _assertion_sign = Drop(Alternative(Text("⊢"), Text("|-")))
-    _unique_sign = Text("E")
     _exists_sign = Drop(Alternative(Text("∃"), Text("€")))
     _nat_number = RegExp('[1-9]\\d*')
     _cdot = Drop(Alternative(RegExp('[·⋅]'), Drop(Series(Text("."), Drop(Lookahead(_nat_number))))))
@@ -157,7 +155,6 @@ class principiaGrammar(Grammar):
     and2 = Alternative(Series(formula1, _a2, formula1), formula1, _element)
     and3 = Alternative(Series(formula2, _a3, formula2), formula2, _element)
     and4 = Alternative(Series(formula3, _a4, formula3), formula3, _element)
-    And = Alternative(and4, and3, and2, and1)
     subscript = Series(variable, Series(Drop(Text(" ")), dwsp__))
     operator = Alternative(Or, Series(ifthen, Option(subscript)), Series(ifonlyif, Option(subscript)), equals)
     axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
@@ -274,23 +271,20 @@ principia_AST_transformation_table = {
     # ">": [],   # called for each node after calling its specific rules
     "principia": [],
     "numbering": [],
-    "assertion": [],
     "definition": [],
     "axiom": [],
     "theorem": [],
     "formula, formula4, formula3, formula2, formula1, formula0":
         [change_name('formula'), process_subscripts, replace_by_single_child],
-    "And, and4, and3, and2, and1": [change_name('And'), replace_by_single_child],
+    # "And": [replace_by_single_child],
+    "and4, and3, and2, and1": [change_name('And'), replace_by_single_child],
     "_element": [],
-    "negation": [],
-    "element": [],
     "for_all": [],
     "exists": [],
     "group": [save_and_delete_groups_brackets],
     "predication": [],
     "function": [],
     "restricted_var": [],
-    "individual": [replace_by_single_child],
     "chapter": [],
     "number": [],
     "proposition": [],
@@ -304,16 +298,11 @@ principia_AST_transformation_table = {
     "_nat_number": [],
     "_cdot": [],
     "_exists_sign": [],
-    "_unique_sign": [],
+    # "_unique_sign": [],
     "_assertion_sign": [],
-    "_or": [],
-    "_ifthen": [],
     "_not": [],
-    "_ifonlyif": [],
-    "_and": [],
+    # "_and": [],
     "_a1, _a2, _a3, _a4": [save_and_dots_in_left_operand_and_remove],
-    "_logical_sign": [],
-    "_reverse_logical_sign": [],
     "_EOF": [],
 }
 
