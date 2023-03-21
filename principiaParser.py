@@ -48,7 +48,7 @@ from DHParser import start_logging, suspend_logging, resume_logging, is_filename
     has_attr, has_parent, ThreadLocalSingletonFactory, Error, canonical_error_strings, \
     has_errors, ERROR, FATAL, set_preset_value, get_preset_value, NEVER_MATCH_PATTERN, \
     gen_find_include_func, preprocess_includes, make_preprocessor, chain_preprocessors, \
-    RootNode, Path, expand_table, pick_from_path
+    RootNode, Path, expand_table, pick_from_path, PseudoJunction, create_parser_transition
 
 
 #######################################################################
@@ -100,7 +100,7 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "ebc4a6a1d8a0e77ca242c5ce3ba2134b"
+    source_hash__ = "f25f96df25c242aa341dda3c79a99c31"
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
@@ -172,24 +172,10 @@ class principiaGrammar(Grammar):
     principia = Series(dwsp__, ZeroOrMore(statement), _EOF)
     root__ = TreeReduction(principia, CombinedParser.MERGE_LEAVES)
     
-
-_raw_grammar = ThreadLocalSingletonFactory(principiaGrammar)
-
-def get_grammar() -> principiaGrammar:
-    grammar = _raw_grammar()
-    if get_config_value('resume_notices'):
-        resume_notices_on(grammar)
-    elif get_config_value('history_tracking'):
-        set_tracer(grammar, trace_history)
-    try:
-        if not grammar.__class__.python_src__:
-            grammar.__class__.python_src__ = get_grammar.python_src__
-    except AttributeError:
-        pass
-    return grammar
     
-def parse_principia(document, start_parser = "root_parser__", *, complete_match=True):
-    return get_grammar()(document, start_parser, complete_match=complete_match)
+parsing: PseudoJunction = create_parser_transition(
+    principiaGrammar)
+get_grammar = parsing.factory # for backwards compatibility, only    
 
 
 #######################################################################
