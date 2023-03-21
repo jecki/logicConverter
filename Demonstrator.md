@@ -4,17 +4,17 @@ into:
 
 1. the AST (the abstract syntax tree) which resembles the PM formula in its 
    concrete textual form ("Textgestalt"). This corresponds to the 
-   presentation form in MathML
+   presentation form in MathML or "Presentation MathML"
 
 2. the LST (logical syntax tree) which resembles the abstract logical 
    structure of the formula or the "mathematical object" described 
    by the formula. This corresponds to the notation of "mathematical
-   object" in MathXML. 
+   object" in MathXML or "Content Math ML". 
 
 3. modern: A unicode based serialization of b) in modern notation (with
    some restrictions, since subscripts und superscripts a printed inline)
 
-4. pm.tex: A translation of the principia notation into TeX's math-mode.
+4. pm.tex: A translation of the Principia-notation into TeX's math-mode.
    In fact, this is a serialization of the AST as TeX-source.
 
 This should suffice to demonstrate the feasibility and at least some of the
