@@ -513,7 +513,11 @@ modern_notation_actions = expand_table({
         f"{' ' if path[-1].has_attr('subscript') else ''}" \
         f"{right}{path[-1].get_attr('right', '')}",
     'function': lambda path, *args: ''.join(args),
-    '*': lambda path, args:  path[-1].content
+    'predication':
+        lambda path, *args: f"{args[0]}({','.join(args[1:])})"
+                if len(args[0]) > 1 or any(arg.isnumeric() for arg in args[1:])
+                else f"{args[0]}{','.join(args[1:])}",
+    '*': lambda path, *args:  path[-1].content
     })
 
 
@@ -539,6 +543,7 @@ modern_junction = ('lst', get_modern_notation, 'modern')
 
 tex = {
     '⊢': r'\vdash ',
+    '|-': r'\vdash ',
     '⋅': r'\cdot ',
     '.': r'.',  # r'\ldot ',
     ':': r':',  # r'\colon ',
@@ -546,6 +551,7 @@ tex = {
     ':.': r':.',  # r'\colon\ldot ',
     '::': r'::',  # r'\colon\colon ',
     '⊃': r'{\supset}',
+    '=>': r'{\supset}',
     '∨': r' \vee ',
     '&': r'\:\&\: ',  # r'\wedge ',
     '∼': r'{\sim}',  # r'\neg',
@@ -557,6 +563,7 @@ tex = {
     '}': r'\}',
     '=': '{=}',
     '≡': r'{\equiv}',
+    '<=>': r'{\equiv}',
     '': ''
 }
 
@@ -574,6 +581,10 @@ principia_tex_actions = expand_table({
     'definition':  lambda path, formula: f"{tex['⊢']} {formula} \\quad Df",
     'theorem': lambda path, formula: f"{formula}",
     'formula, function': lambda path, *args: ''.join(args),
+    'predication':
+        lambda path, *args: f"{args[0]}({','.join(args[1:])})"
+        if len(args[0]) > 1 or any(arg.isnumeric() for arg in args[1:])
+        else f"{args[0]}{','.join(args[1:])}",
     'operator, proposition': lambda path, arg:
         f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"
         f"{tex[path[-1].get_attr('right', '')]}",
@@ -585,6 +596,7 @@ principia_tex_actions = expand_table({
     'for_all': lambda path, variable, expression:
         f"{expression}" if path[-1].has_attr('subscripted') else f"({variable[0]}){variable[1:]}{expression}",
     'exists': lambda path, variable, expression: f"(\exists {variable[0]}){variable[1:]}{expression}",
+    '*': lambda path, *args:  path[-1].content
 })
 
 

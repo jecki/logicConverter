@@ -10,7 +10,9 @@ Copyright 2016-2022  Eckhart Arnold <arnold@badw.de>, Bavarian Academy of Scienc
 First use case is going to be the translation of formulae in the historical 
 notation of the "Principia Mathematica" as used by Bertrand Russel and Rudolf Carnap
 into notations used by contemporary text-books as well as modern computer algebra
-systems.
+systems. For a description of the notation, see Linsky, Bernard, "The Notation 
+in *Principia Mathematica*", The Stanford Encyclopedia of Philosophy 
+(Fall 2022 Edition), Edward N. Zalta & Uri, <https://plato.stanford.edu/entries/pm-notation/> 
 
 Status
 ------
