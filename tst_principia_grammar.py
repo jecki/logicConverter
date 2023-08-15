@@ -90,7 +90,7 @@ def run_grammar_tests(fn_pattern, get_grammar, get_transformer):
         fn_patterns=[fn_pattern], report='REPORT', verbose=True,
         junctions={LST_junction, modern_junction, principia_tex_junction,
                    modern_tex_junction},
-        show={'ast', 'lst', 'modern', 'pm.tex', 'modern.tex'})
+        show={'ast', 'LST', 'modern', 'pm.tex', 'modern.tex'})
     gen_html()
     return error_report
 

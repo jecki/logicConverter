@@ -352,7 +352,7 @@ class principiaCompiler(Compiler):
     def finalize(self, result: Any) -> Any:
         if isinstance(self.tree, RootNode):
             root = cast(RootNode, self.tree)
-            root.stage = 'lst'  # logical syntax tree
+            root.stage = 'LST'  # logical syntax tree
         return result
 
     def remove_attributes(self, node):
@@ -468,7 +468,7 @@ def compile_principia(ast):
     return get_compiler()(ast)
 
 
-LST_junction = ('ast', get_compiler, 'lst')
+LST_junction = ('ast', get_compiler, 'LST')
 
 
 #######################################################################
@@ -528,13 +528,13 @@ def get_modern_notation():  return modern_notation
 
 def modern_notation(lst: RootNode) -> str:
     global modern_notation_actions
-    assert lst.stage == 'lst'
+    assert lst.stage == 'LST'
     result = lst.evaluate(modern_notation_actions, path=[lst])
     lst.stage = 'modern'
     return result
 
 
-modern_junction = ('lst', get_modern_notation, 'modern')
+modern_junction = ('LST', get_modern_notation, 'modern')
 
 
 #######################################################################
@@ -659,13 +659,13 @@ def get_modern_tex():  return modern_tex
 
 def modern_tex(lst: RootNode) -> str:
     global modern_tex_actions
-    assert lst.stage == 'lst'
+    assert lst.stage == 'LST'
     result = lst.evaluate(copy.deepcopy(modern_tex_actions), path=[lst])
     lst.stage = 'modern.tex'
     return result
 
 
-modern_tex_junction = ('lst', get_modern_tex, 'modern.tex')
+modern_tex_junction = ('LST', get_modern_tex, 'modern.tex')
 
 
 #######################################################################
