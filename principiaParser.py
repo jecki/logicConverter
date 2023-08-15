@@ -102,56 +102,58 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "428b78e4507817860a3badcb46d327ea"
+    source_hash__ = "a35b6216c97108cb54e998fc31ceed69"
     early_tree_reduction__ = CombinedParser.MERGE_LEAVES
-    disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
+    disposable__ = re.compile('_EOF$|_LF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
     comment_rx__ = re.compile(COMMENT__)
-    WHITESPACE__ = r'[ \t]*(?:\n[ \t]*(?![ \t]*\n))?'
+    WHITESPACE__ = r'[\t ]*'
     WSP_RE__ = mixin_comment(whitespace=WHITESPACE__, comment=COMMENT__)
     wsp__ = Whitespace(WSP_RE__)
     dwsp__ = Drop(Whitespace(WSP_RE__))
     _EOF = Drop(NegativeLookahead(RegExp('.')))
-    _reverse_logical_connector = RegExp('[⊢∨⊃≡=]|-[|]|>-|<->')
-    _logical_connector = RegExp('[⊢∨⊃≡=]|[|]-|->|<->')
-    _rB = Drop(Text(")"))
-    _lB = Drop(Text("("))
-    _a4 = Series(Text("::"), NegativeLookahead(_logical_connector))
-    _a3 = Series(Alternative(Text(".:"), Text(":.")), NegativeLookahead(_logical_connector))
-    _a2 = Series(Text(":"), NegativeLookahead(_logical_connector))
-    _a1 = Series(Text("."), NegativeLookahead(_logical_connector))
-    _not = Drop(Alternative(Text("∼"), Text("~")))
-    _assertion_sign = Drop(Alternative(Text("⊢"), Text("|-")))
+    _LF = Drop(RegExp('[ \\t\\r]*\\n\\s*'))
+    _reverse_logical_connector = RegExp('[⊢∨⊃≡=]|-[|]|>=|<=>')
+    _logical_connector = RegExp('[⊢∨⊃≡=]|[|]-|=>|<=>')
+    _rB = Drop(Series(Text(")"), dwsp__))
+    _lB = Drop(Series(Text("("), dwsp__))
+    _a4 = Series(Text("::"), dwsp__, NegativeLookahead(_logical_connector))
+    _a3 = Series(Alternative(Text(".:"), Text(":.")), dwsp__, NegativeLookahead(_logical_connector))
+    _a2 = Series(Text(":"), dwsp__, NegativeLookahead(_logical_connector))
+    _a1 = Series(Text("."), dwsp__, NegativeLookahead(_logical_connector))
+    _not = Drop(Series(Drop(Alternative(Text("∼"), Text("~"))), dwsp__))
+    _assertion_sign = Drop(Series(Drop(Alternative(Text("⊢"), Text("|-"))), dwsp__))
     _exists_sign = Drop(Alternative(Text("∃"), Text("€")))
     _nat_number = RegExp('[1-9]\\d*')
     _cdot = Drop(Alternative(RegExp('[·⋅]'), Drop(Series(Text("."), Drop(Lookahead(_nat_number))))))
-    _d4 = Alternative(Series(Text("::"), Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text("::")))
-    _d3 = Alternative(Series(Alternative(Text(":."), Text(".:")), Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Alternative(Text(":."), Text(".:"))))
-    _d2 = Alternative(Series(Text(":"), Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(":")))
-    _d1 = Alternative(Series(Text("."), Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(".")))
+    _d4 = Alternative(Series(Text("::"), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text("::"), dwsp__))
+    _d3 = Alternative(Series(Alternative(Text(":."), Text(".:")), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Alternative(Text(":."), Text(".:")), dwsp__))
+    _d2 = Alternative(Series(Text(":"), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(":"), dwsp__))
+    _d1 = Alternative(Series(Text("."), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text("."), dwsp__))
     _dots = Alternative(_d4, _d3, _d2, _d1)
-    equals = Text("=")
-    ifonlyif = Alternative(Text("≡"), Text("<=>"))
-    ifthen = Alternative(Text("⊃"), Text("=>"))
-    Or = Alternative(Text("∨"), Text("v"))
-    relation = RegExp('[QRST]')
+    equals = Series(Text("="), dwsp__)
+    ifonlyif = Series(Alternative(Text("≡"), Text("<=>")), dwsp__)
+    ifthen = Series(Alternative(Text("⊃"), Text("=>")), dwsp__)
+    Or = Series(Alternative(Text("∨"), Text("v")), dwsp__)
+    relation = RegExp('[QRSTPG][a-z]?')
     function_name = RegExp('[fghϕψχ]')
+    number = Synonym(_nat_number)
     constant = RegExp('[abcde]')
     circumflected = Alternative(RegExp('[x̂ŷẑ]'), RegExp('^[xyz]'))
     variable = RegExp('[xyz]')
     proposition = RegExp('[pqrstu]')
-    number = Series(RegExp('0*'), _nat_number)
+    counter = Series(RegExp('0*'), _nat_number)
     chapter = Synonym(_nat_number)
-    _individual = Alternative(variable, constant)
+    _individual = Alternative(variable, constant, number)
     function = Series(function_name, Alternative(_individual, circumflected))
     restricted_var = Series(circumflected, function)
     predication = Alternative(Series(relation, _lB, _individual, ZeroOrMore(Series(Series(Drop(Text(",")), dwsp__), _individual)), _rB), Series(_individual, relation, _individual))
-    group = Alternative(Series(Text("("), formula, Text(")")), Series(Text("{"), formula, Text("}")))
+    group = Alternative(Series(Text("("), dwsp__, formula, Text(")"), dwsp__), Series(Text("{"), dwsp__, formula, Text("}"), dwsp__))
     exists = Series(_lB, _exists_sign, variable, _rB, _a1, and1)
     for_all = Series(_lB, variable, _rB, _a1, formula0)
-    _affirmation = Alternative(for_all, exists, group, predication, proposition, function, variable, restricted_var, constant)
+    _affirmation = Alternative(for_all, exists, group, predication, proposition, function, variable, restricted_var, constant, number)
     Not = Series(_not, _affirmation)
     _element = Alternative(Not, _affirmation)
     theorem = Series(_assertion_sign, Option(_dots), formula)
@@ -163,7 +165,7 @@ class principiaGrammar(Grammar):
     axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
     definition = Series(formula, dwsp__, Series(Drop(Text("Df")), dwsp__))
     _assertion = Alternative(definition, axiom, theorem)
-    numbering = Series(Alternative(Series(Drop(Text("*")), dwsp__), Series(Drop(Text("∗")), dwsp__)), chapter, _cdot, number, dwsp__)
+    numbering = Series(Alternative(Series(Drop(Text("*")), dwsp__), Series(Drop(Text("∗")), dwsp__)), chapter, _cdot, counter, dwsp__)
     formula4 = Alternative(Series(and4, _d4, operator, ZeroOrMore(Series(_d4, and4, _d4, operator)), Alternative(Series(_d4, and4), Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and4, _d4), Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d4, and4, ZeroOrMore(Series(_d4, operator, _d4, and4))), and4)
     statement = Series(numbering, _assertion)
     and1.set(Alternative(Series(formula0, _a1, formula0), formula0, _element))
@@ -172,7 +174,7 @@ class principiaGrammar(Grammar):
     formula2.set(Alternative(Series(and2, _d2, operator, ZeroOrMore(Series(_d2, and2, _d2, operator)), Alternative(Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d2, and2, ZeroOrMore(Series(_d2, operator, _d2, and2))), and2))
     formula3.set(Alternative(Series(and3, _d3, operator, ZeroOrMore(Series(_d3, and3, _d3, operator)), Alternative(Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d3, and3, ZeroOrMore(Series(_d3, operator, _d3, and3))), and3))
     formula.set(Alternative(formula4, formula3, formula2, formula1, formula0))
-    principia = Series(dwsp__, ZeroOrMore(statement), _EOF)
+    principia = Series(dwsp__, ZeroOrMore(Series(statement, ZeroOrMore(_LF))), _EOF)
     root__ = principia
     
     
@@ -350,7 +352,7 @@ class principiaCompiler(Compiler):
     def finalize(self, result: Any) -> Any:
         if isinstance(self.tree, RootNode):
             root = cast(RootNode, self.tree)
-            root.stage = "lst"  # logical syntax tree
+            root.stage = 'lst'  # logical syntax tree
         return result
 
     def remove_attributes(self, node):
@@ -646,7 +648,10 @@ modern_tex_actions = expand_table({
         f"{thickmuskip if path[-1].has_attr('subscript') else ' '}"
         f"{right}{path[-1].get_attr('right', '')}",
     'function': lambda path, *args: ''.join(args),
-    '*': lambda path, args:  path[-1].content
+    'predication': lambda path, *args: f"{args[0]}({','.join(args[1:])})"
+        if len(args[0]) > 1 or any(arg.isnumeric() for arg in args[1:])
+        else f"{args[0]}{','.join(args[1:])}",
+    '*': lambda path, *args:  path[-1].content
     })
 
 def get_modern_tex():  return modern_tex
