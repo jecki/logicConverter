@@ -20,6 +20,7 @@ try:
     from DHParser import dsl
     import DHParser.log
     from DHParser import testing
+    from DHParser.toolkit import re
 except ModuleNotFoundError:
     print('Could not import DHParser. Please adjust sys.path in file '
           '"%s" manually' % __file__)
@@ -41,6 +42,41 @@ def recompile_grammar(grammar_src, force):
     dsl.restore_server_script(grammar_src)
 
 
+mathjax_head = '''
+<!DOCTYPE html>
+<html lang="de" xml:lang="de">
+<head>
+<title>TITLE</title>
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+<body>
+<script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+<script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+'''
+
+mathjax_tail = '''
+</body>
+</html>
+'''
+
+
+def gen_html():
+    import markdown2
+    grammar_tests_dir = os.path.join(scriptpath, TEST_DIRNAME)
+    report_dir = os.path.join(grammar_tests_dir, 'REPORT')
+    for fname in os.listdir(report_dir):
+        fpath = os.path.join(report_dir, fname)
+        html = markdown2.markdown_path(fpath)
+        html = re.sub(r'<pre><code>\s*\\\[', r'\[', html)
+        html = re.sub(r'\\\]\s*</code></pre>', r'\]', html)
+        html_name = fpath[:fpath.rfind('.')] + '.html'
+        with open(html_name, 'w', encoding='utf-8') as f:
+            head = mathjax_head.replace('TITLE', fname)
+            f.write('\n'.join([head, html, mathjax_tail]))
+
+
 def run_grammar_tests(fn_pattern, get_grammar, get_transformer):
     if fn_pattern.find('/') >= 0 or fn_pattern.find('\\') >= 0:
         testdir, fn_pattern = os.path.split(fn_pattern)
@@ -52,8 +88,10 @@ def run_grammar_tests(fn_pattern, get_grammar, get_transformer):
     error_report = testing.grammar_suite(
         testdir, get_grammar, get_transformer,
         fn_patterns=[fn_pattern], report='REPORT', verbose=True,
-        junctions={LST_junction, modern_junction, principia_tex_junction},
-        show={'ast', 'LST', 'modern', 'pm.tex'})  # 'modern'
+        junctions={LST_junction, modern_junction, principia_tex_junction,
+                   modern_tex_junction},
+        show={'ast', 'lst', 'modern', 'pm.tex', 'modern.tex'})
+    gen_html()
     return error_report
 
 
@@ -84,7 +122,7 @@ if __name__ == '__main__':
                           force=False)
         sys.path.append('.')
         from principiaParser import get_grammar, get_transformer, get_compiler, get_modern_notation, \
-            LST_junction, modern_junction, principia_tex_junction
+            LST_junction, modern_junction, principia_tex_junction, modern_tex_junction
         error_report = run_grammar_tests(arg, get_grammar, get_transformer)
         if error_report:
             print('\n')

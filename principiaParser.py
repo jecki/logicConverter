@@ -53,7 +53,6 @@ from DHParser import start_logging, suspend_logging, resume_logging, is_filename
 from DHParser.dsl import PseudoJunction, create_parser_transition
 
 
-
 #######################################################################
 #
 # PREPROCESSOR SECTION - Can be edited. Changes will be preserved.
@@ -103,13 +102,14 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "f25f96df25c242aa341dda3c79a99c31"
+    source_hash__ = "428b78e4507817860a3badcb46d327ea"
+    early_tree_reduction__ = CombinedParser.MERGE_LEAVES
     disposable__ = re.compile('_EOF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
     comment_rx__ = re.compile(COMMENT__)
-    WHITESPACE__ = r'[ \t]*(?:\n[ \t]*)?(?!\n)'
+    WHITESPACE__ = r'[ \t]*(?:\n[ \t]*(?![ \t]*\n))?'
     WSP_RE__ = mixin_comment(whitespace=WHITESPACE__, comment=COMMENT__)
     wsp__ = Whitespace(WSP_RE__)
     dwsp__ = Drop(Whitespace(WSP_RE__))
@@ -173,7 +173,7 @@ class principiaGrammar(Grammar):
     formula3.set(Alternative(Series(and3, _d3, operator, ZeroOrMore(Series(_d3, and3, _d3, operator)), Alternative(Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d3, and3, ZeroOrMore(Series(_d3, operator, _d3, and3))), and3))
     formula.set(Alternative(formula4, formula3, formula2, formula1, formula0))
     principia = Series(dwsp__, ZeroOrMore(statement), _EOF)
-    root__ = TreeReduction(principia, CombinedParser.MERGE_LEAVES)
+    root__ = principia
     
     
 parsing: PseudoJunction = create_parser_transition(
@@ -350,7 +350,7 @@ class principiaCompiler(Compiler):
     def finalize(self, result: Any) -> Any:
         if isinstance(self.tree, RootNode):
             root = cast(RootNode, self.tree)
-            root.stage = "LST"  # logical syntax tree
+            root.stage = "lst"  # logical syntax tree
         return result
 
     def remove_attributes(self, node):
@@ -466,7 +466,7 @@ def compile_principia(ast):
     return get_compiler()(ast)
 
 
-LST_junction = ('ast', get_compiler, 'LST')
+LST_junction = ('ast', get_compiler, 'lst')
 
 
 #######################################################################
@@ -522,13 +522,13 @@ def get_modern_notation():  return modern_notation
 
 def modern_notation(lst: RootNode) -> str:
     global modern_notation_actions
-    assert lst.stage == 'LST'
+    assert lst.stage == 'lst'
     result = lst.evaluate(modern_notation_actions, path=[lst])
     lst.stage = 'modern'
     return result
 
 
-modern_junction = ('LST', get_modern_notation, 'modern')
+modern_junction = ('lst', get_modern_notation, 'modern')
 
 
 #######################################################################
@@ -537,27 +537,28 @@ modern_junction = ('LST', get_modern_notation, 'modern')
 #
 ######################################################################
 
-pm_tex = {
+tex = {
     '⊢': r'\vdash ',
-    '.': r'\ldot ',
-    ':': r'\colon ',
-    '.:': r'\ldot\colon ',
-    ':.': r'\colon\ldot ',
-    '::': r'\colon\colon ',
+    '⋅': r'\cdot ',
+    '.': r'.',  # r'\ldot ',
+    ':': r':',  # r'\colon ',
+    '.:': r'.:',  # r'\ldot\colon ',
+    ':.': r':.',  # r'\colon\ldot ',
+    '::': r'::',  # r'\colon\colon ',
     '⊃': r'{\supset}',
-    '∨': r'\vee ',
-    '∼': r'\osim ',
+    '∨': r' \vee ',
+    '&': r'\:\&\: ',  # r'\wedge ',
+    '∼': r'{\sim}',  # r'\neg',
+    '∀': r'\forall ',
+    '∃': r'\exists ',
     '(': '(',
     ')': ')',
-    '{': '\{',
-    '}': '\}',
+    '{': r'\{',
+    '}': r'\}',
     '=': '{=}',
-    '≡': '{\equiv}',
+    '≡': r'{\equiv}',
     '': ''
 }
-
-tex = pm_tex
-
 
 def subscript(node)->str:
     sc = node.get_attr('subscript', '')
@@ -565,16 +566,16 @@ def subscript(node)->str:
 
 
 principia_tex_actions = expand_table({
-    'principia': lambda path, *args: '\\[\n' + '\n\n'.join(args) + '\n\\]',
+    'principia': lambda path, *args: '\\[ ' + '\n\n'.join(args) + ' \\]',
     'statement': lambda path, numbering, assertion: f"{numbering}    {assertion}",
-    'numbering': lambda path, chapter, number: f"\\tag*{{∗{number}⋅{chapter}}}",
+    'numbering': lambda path, chapter, number: f"\\tag*{{∗{chapter}⋅{number}}}",
     'number, chapter': lambda path, content: content,
     'axiom': lambda path, formula: f"{tex['⊢']} {tex[':']}  {formula} \\quad Pp",
     'definition':  lambda path, formula: f"{tex['⊢']} {formula} \\quad Df",
-    'theorem': lambda path, formula: f"{{\\vdash}} {tex[':']}  {formula}",
+    'theorem': lambda path, formula: f"{formula}",
     'formula, function': lambda path, *args: ''.join(args),
     'operator, proposition': lambda path, arg:
-        f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"\
+        f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"
         f"{tex[path[-1].get_attr('right', '')]}",
     'Or, ifthen, equals, ifonlyif': lambda path, arg: tex[arg],
     'And': lambda path, *args: ''.join(args),
@@ -590,11 +591,11 @@ principia_tex_actions = expand_table({
 def get_principia_tex():  return principia_tex
 
 
-def principia_tex(lst: RootNode) -> str:
+def principia_tex(ast: RootNode) -> str:
     global principia_tex_actions
-    assert lst.stage == 'ast'
-    result = lst.evaluate(copy.deepcopy(principia_tex_actions), path=[lst])
-    lst.stage = 'pm.tex'
+    assert ast.stage == 'ast'
+    result = ast.evaluate(copy.deepcopy(principia_tex_actions), path=[ast])
+    ast.stage = 'pm.tex'
     return result
 
 
@@ -608,41 +609,46 @@ principia_tex_junction = ('ast', get_principia_tex, 'pm.tex')
 ######################################################################
 
 
-modern_tex_actions = expand_table({
-    'principia': lambda path, *args: '\\[\n' + '\n\n'.join(args) + '\n\\]',
-    'statement': lambda path, numbering, assertion: f"{numbering}    {assertion}",
-    'numbering': lambda path, chapter, number: f"\\tag*{{∗{number}⋅{chapter}}}",
-    'number, chapter': lambda path, content: content,
-    'axiom': lambda path, formula: f"{tex['⊢']} {tex[':']}  {formula} \\quad Pp",
-    'definition':  lambda path, formula: f"{tex['⊢']} {formula} \\quad Df",
-    'theorem': lambda path, formula: f"{{\\vdash}} {tex[':']}  {formula}",
-    'formula, function': lambda path, *args: ''.join(args),
-    'operator, proposition': lambda path, arg:
-        f"{tex[path[-1].get_attr('left', '')]}{arg}{subscript(path[-1])}"\
-        f"{tex[path[-1].get_attr('right', '')]}",
-    'Or, ifthen, equals, ifonlyif': lambda path, arg: tex[arg],
-    'And': lambda path, *args: ''.join(args),
-    'Not': lambda path, arg: tex['∼'] + arg,
-    'group, variable, function_name': lambda path, arg:
-        f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}",
-    'for_all': lambda path, variable, expression:
-        f"{expression}" if path[-1].has_attr('subscripted') else f"({variable[0]}){variable[1:]}{expression}",
-    'exists': lambda path, variable, expression: f"(\exists {variable[0]}){variable[1:]}{expression}",
-})
+quad = r' \quad '
+medmuskip = r' \: '
+thickmuskip = r' \; '
 
+
+modern_tex_actions = expand_table({
+    'principia': lambda path, *args: '\\[ ' + '\n\n'.join(args) + ' \\]',
+    'statement': lambda path, numbering, assertion: f"{numbering}    {assertion}",
+    'numbering': lambda path, chapter, number: f"\\tag*{{{chapter}.{number}}}",
+    'number, chapter, definition': lambda path, content: content,
+    'axiom, theorem': lambda path, formula: f"{formula}",
+    'for_all': lambda path, variable, expression:
+        f"\\forall {variable}\;{expression}",
+    'exists': lambda path, variable, expression:
+        f"\\exists {variable}\;{expression}",
+    'Not': lambda path, arg: tex['∼'] + arg,
+    'ifthen, Or, And': lambda path, left, right: f"{path[-1].get_attr('left', '')}{left}"
+        f" {tex[Symbols[path[-1].name]]}{right}{path[-1].get_attr('right', '')}",
+    'equals, ifonlyif': lambda path, left, right:
+        f"{path[-1].get_attr('left', '')}{left}"
+        f"{thickmuskip if path[-1].has_attr('subscript') else ' '}"
+        f"{Symbols[path[-1].name]}_{{{path[-1].get_attr('subscript', '')}}}"
+        f"{thickmuskip if path[-1].has_attr('subscript') else ' '}"
+        f"{right}{path[-1].get_attr('right', '')}",
+    'function': lambda path, *args: ''.join(args),
+    '*': lambda path, args:  path[-1].content
+    })
 
 def get_modern_tex():  return modern_tex
 
 
 def modern_tex(lst: RootNode) -> str:
-    global principia_tex_actions
-    assert lst.stage == 'ast'
-    result = lst.evaluate(copy.deepcopy(principia_tex_actions), path=[lst])
-    lst.stage = 'pm.tex'
+    global modern_tex_actions
+    assert lst.stage == 'lst'
+    result = lst.evaluate(copy.deepcopy(modern_tex_actions), path=[lst])
+    lst.stage = 'modern.tex'
     return result
 
 
-modern_tex_junction = ('lst', get_principia_tex, 'modern.tex')
+modern_tex_junction = ('lst', get_modern_tex, 'modern.tex')
 
 
 #######################################################################
