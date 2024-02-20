@@ -52,6 +52,8 @@ from DHParser import start_logging, suspend_logging, resume_logging, is_filename
 
 from DHParser.dsl import PseudoJunction, create_parser_transition
 
+from DHParser.pipeline import PseudoJunction, create_parser_junction
+
 
 #######################################################################
 #
@@ -102,9 +104,9 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "a35b6216c97108cb54e998fc31ceed69"
+    source_hash__ = "816ab1c82aceffd2a6e9fb9f7c95a19b"
     early_tree_reduction__ = CombinedParser.MERGE_LEAVES
-    disposable__ = re.compile('_EOF$|_LF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
+    disposable__ = re.compile('(?:..(?<=^))|(?:_LF$|_not$|_dots$|_individual$|_nat_number$|_affirmation$|_rB$|_exists_sign$|_assertion$|_EOF$|_cdot$|_lB$|_assertion_sign$|_element$)')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
@@ -123,11 +125,11 @@ class principiaGrammar(Grammar):
     _a3 = Series(Alternative(Text(".:"), Text(":.")), dwsp__, NegativeLookahead(_logical_connector))
     _a2 = Series(Text(":"), dwsp__, NegativeLookahead(_logical_connector))
     _a1 = Series(Text("."), dwsp__, NegativeLookahead(_logical_connector))
-    _not = Drop(Series(Drop(Alternative(Text("∼"), Text("~"))), dwsp__))
-    _assertion_sign = Drop(Series(Drop(Alternative(Text("⊢"), Text("|-"))), dwsp__))
+    _not = Drop(Series(Alternative(Text("∼"), Text("~")), dwsp__))
+    _assertion_sign = Drop(Series(Alternative(Text("⊢"), Text("|-")), dwsp__))
     _exists_sign = Drop(Alternative(Text("∃"), Text("€")))
     _nat_number = RegExp('[1-9]\\d*')
-    _cdot = Drop(Alternative(RegExp('[·⋅]'), Drop(Series(Text("."), Drop(Lookahead(_nat_number))))))
+    _cdot = Drop(Alternative(RegExp('[·⋅]'), Series(Text("."), Lookahead(_nat_number))))
     _d4 = Alternative(Series(Text("::"), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text("::"), dwsp__))
     _d3 = Alternative(Series(Alternative(Text(":."), Text(".:")), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Alternative(Text(":."), Text(".:")), dwsp__))
     _d2 = Alternative(Series(Text(":"), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(":"), dwsp__))
@@ -176,11 +178,9 @@ class principiaGrammar(Grammar):
     formula.set(Alternative(formula4, formula3, formula2, formula1, formula0))
     principia = Series(dwsp__, ZeroOrMore(Series(statement, ZeroOrMore(_LF))), _EOF)
     root__ = principia
-    
-    
-parsing: PseudoJunction = create_parser_transition(
-    principiaGrammar)
-get_grammar = parsing.factory # for backwards compatibility, only    
+        
+parsing: PseudoJunction = create_parser_junction(principiaGrammar)
+get_grammar = parsing.factory # for backwards compatibility, only
 
 
 #######################################################################

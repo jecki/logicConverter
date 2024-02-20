@@ -107,4 +107,71 @@ parsing-expression-grammars (PEGs). (Beware, though, despite being
 well-established and in this sense "ordinary", PEGs require quite a 
 bit of practice before they are fully mastered.)
 
+Just how difficult or easy it is to write a formula-parser and converter
+also depends on the data-formats that are used. Therefore, some
+consideration shall be given to these in the following. Another reason
+why the choice of the data-formats deserves consideration is that the
+long-term and short-term re-usability of the edition-data (or "edition
+source code") depends on this choice, even if it may be hard to
+determine just how, a question which in particular in the case of
+long-term usability is hard to answer reliably without the gifts of a
+fortune-teller. 
+
+If we leave out the question of machine-readability aside for the
+moment, which will be discussed below, one can distinguish roughly three
+kinds of data-formats involved when preparing a digital edition in
+human-readable form: 
+
+1. the **input-format** in which the data is entered or stored after
+   entering it with a graphical user interface
+
+2. the **output-format** for the human-readable form
+
+3. and, finally, the **processing format(s)** in which the data is processed
+   internally, among other things, in order to produce the
+   human-readable output from the given digital input.
+
+As long as human readability is concerned, the choice of the output
+format does not raise much of a question: It is either PDF (for a
+printed output) or a webpage (i.e. HTML in combination with other
+formats for embedded or linked elements). 
+
+But how do you arrive at these two output formats? Especially, if you
+want to avoid avoid extra work for supporting the two of them. Luckily
+with TeX there exists a format that is pretty much a standard for typing
+mathematical formulae, that has remained backwards-compatible during the
+last 40 years, that is supported by a large community and rich and
+software ecosystem and for which mature open-source-solution to
+transform it either to PDF (texlive or any other TeX-distribution) or
+into a form suitable for being displayed on a webpage (MathJAX or
+KaTeX).
+ 
+Using TeX for mathematical formulae is a no-brainer. However, it should
+be kept in mind that TeX is primarily a system (and notation) for
+typesetting mathematical formulae. Because of this, it has certain
+limitations with respect to other use-cases than typesetting formulae to
+generate human-readable output. 
+
+While these other use-cases and their implications for the choice of
+technology and data formats will be discussed in some detail in the next
+sections, the fact that there are such use cases which might be poorly 
+served by TeX, makes it sensible to cast a quick glance on some of the 
+possible alternatives just now, to see how they fare with respect to
+generating human-readably output. Possible or proposed alternatives
+to TeX are:
+
+1. formulae-editors as they often come packages with common
+   word-processors.
+
+2. proposed use-case agnostic "standards" like MathML
+
+3. computer-algebra-systems as well as proof-assistants and
+   proof-validators.
+
+
+
 ### Providing machine-readable formulae
+
+
+
+### Data-formats and workflows
