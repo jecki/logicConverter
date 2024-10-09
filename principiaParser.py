@@ -104,9 +104,9 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "816ab1c82aceffd2a6e9fb9f7c95a19b"
+    source_hash__ = "08337463ab25ce613df57cc075a8f24d"
     early_tree_reduction__ = CombinedParser.MERGE_LEAVES
-    disposable__ = re.compile('(?:..(?<=^))|(?:_LF$|_not$|_dots$|_individual$|_nat_number$|_affirmation$|_rB$|_exists_sign$|_assertion$|_EOF$|_cdot$|_lB$|_assertion_sign$|_element$)')
+    disposable__ = re.compile('(?:_rB$|_lB$|_nat_number$|_cdot$|_EOF$|_exists_sign$|_LF$|_element$|_assertion$|_not$|_assertion_sign$|_dots$|_individual$|_affirmation$)')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
@@ -178,7 +178,7 @@ class principiaGrammar(Grammar):
     formula.set(Alternative(formula4, formula3, formula2, formula1, formula0))
     principia = Series(dwsp__, ZeroOrMore(Series(statement, ZeroOrMore(_LF))), _EOF)
     root__ = principia
-        
+    
 parsing: PseudoJunction = create_parser_junction(principiaGrammar)
 get_grammar = parsing.factory # for backwards compatibility, only
 
@@ -597,7 +597,7 @@ principia_tex_actions = expand_table({
         f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}",
     'for_all': lambda path, variable, expression:
         f"{expression}" if path[-1].has_attr('subscripted') else f"({variable[0]}){variable[1:]}{expression}",
-    'exists': lambda path, variable, expression: f"(\exists {variable[0]}){variable[1:]}{expression}",
+    'exists': lambda path, variable, expression: fr"(\exists {variable[0]}){variable[1:]}{expression}",
     '*': lambda path, *args:  path[-1].content
 })
 
@@ -635,9 +635,9 @@ modern_tex_actions = expand_table({
     'number, chapter, definition': lambda path, content: content,
     'axiom, theorem': lambda path, formula: f"{formula}",
     'for_all': lambda path, variable, expression:
-        f"\\forall {variable}\;{expression}",
+        f"\\forall {variable}\\;{expression}",
     'exists': lambda path, variable, expression:
-        f"\\exists {variable}\;{expression}",
+        f"\\exists {variable}\\;{expression}",
     'Not': lambda path, arg: tex['∼'] + arg,
     'ifthen, Or, And': lambda path, left, right: f"{path[-1].get_attr('left', '')}{left}"
         f" {tex[Symbols[path[-1].name]]}{right}{path[-1].get_attr('right', '')}",
