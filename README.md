@@ -27,11 +27,10 @@ It can convert some formulars from the Principia Mathematica into:
      principia-notation
   4. TeX-representation of the original principia mathematica notation 
 
-Have a look at "Example.md" to see what this means or run the "tst_principia_grammar.py"-script 
+Have a look at "Demonstrator.md" to see what this means or run the "tst_principia_grammar.py"-script 
 in this directory by typing "python tst_principia_grammar.py" on the command line to produce 
 some examples in the "tests_grammar/REPORT" sub-directory!
 
-Requires the latest development branch of [DHParser](https://gitlab.lrz.de/badw-it/DHParser/-/tree/development)!
 
 License
 -------
