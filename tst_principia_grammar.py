@@ -39,7 +39,7 @@ def recompile_grammar(grammar_src, force):
         with open(error_path, 'r', encoding='utf-8') as f:
             print(f.read())
         sys.exit(1)
-    dsl.restore_server_script(grammar_src)
+    dsl.create_scripts(grammar_src)
 
 
 mathjax_head = '''
@@ -63,18 +63,21 @@ mathjax_tail = '''
 
 
 def gen_html():
-    import markdown2
-    grammar_tests_dir = os.path.join(scriptpath, TEST_DIRNAME)
-    report_dir = os.path.join(grammar_tests_dir, 'REPORT')
-    for fname in os.listdir(report_dir):
-        fpath = os.path.join(report_dir, fname)
-        html = markdown2.markdown_path(fpath)
-        html = re.sub(r'<pre><code>\s*\\\[', r'\[', html)
-        html = re.sub(r'\\\]\s*</code></pre>', r'\]', html)
-        html_name = fpath[:fpath.rfind('.')] + '.html'
-        with open(html_name, 'w', encoding='utf-8') as f:
-            head = mathjax_head.replace('TITLE', fname)
-            f.write('\n'.join([head, html, mathjax_tail]))
+    try:
+        import markdown2
+        grammar_tests_dir = os.path.join(scriptpath, TEST_DIRNAME)
+        report_dir = os.path.join(grammar_tests_dir, 'REPORT')
+        for fname in os.listdir(report_dir):
+            fpath = os.path.join(report_dir, fname)
+            html = markdown2.markdown_path(fpath)
+            html = re.sub(r'<pre><code>\s*\\\[', r'\[', html)
+            html = re.sub(r'\\\]\s*</code></pre>', r'\]', html)
+            html_name = fpath[:fpath.rfind('.')] + '.html'
+            with open(html_name, 'w', encoding='utf-8') as f:
+                head = mathjax_head.replace('TITLE', fname)
+                f.write('\n'.join([head, html, mathjax_tail]))
+    except ImportError:
+        print('WARNING: Could not import markdown2. No HTML-report will be generated.')
 
 
 def run_grammar_tests(fn_pattern, get_grammar, get_transformer):

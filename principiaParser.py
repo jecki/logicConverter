@@ -52,6 +52,9 @@ from DHParser import start_logging, suspend_logging, resume_logging, is_filename
 
 from DHParser.dsl import PseudoJunction, create_parser_transition
 
+from DHParser.pipeline import PseudoJunction, create_parser_junction
+
+
 
 #######################################################################
 #
@@ -94,7 +97,12 @@ def preprocess_principia(source):
 #######################################################################
 
 class principiaGrammar(Grammar):
-    r"""Parser for a principia source file.
+    r"""Parser for a principia document.
+
+    Instantiate this class and then call the instance with the
+    source code as argument in order to use the parser, e.g.:
+        parser = principia()
+        syntax_tree = parser(source_code)
     """
     and1 = Forward()
     formula = Forward()
@@ -102,9 +110,9 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "a35b6216c97108cb54e998fc31ceed69"
+    source_hash__ = "598c4956da47f277e2d8a441e47cce57"
     early_tree_reduction__ = CombinedParser.MERGE_LEAVES
-    disposable__ = re.compile('_EOF$|_LF$|_cdot$|_element$|_affirmation$|_dots$|_assertion_sign$|_nat_number$|_not$|_lB$|_rB$|_exists_sign$|_individual$|_assertion$')
+    disposable__ = re.compile('(?:_nat_number$|_exists_sign$|_cdot$|_LF$|_individual$|_assertion$|_assertion_sign$|_EOF$|_lB$|_not$|_rB$|_affirmation$|_element$|_dots$)')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
@@ -123,11 +131,11 @@ class principiaGrammar(Grammar):
     _a3 = Series(Alternative(Text(".:"), Text(":.")), dwsp__, NegativeLookahead(_logical_connector))
     _a2 = Series(Text(":"), dwsp__, NegativeLookahead(_logical_connector))
     _a1 = Series(Text("."), dwsp__, NegativeLookahead(_logical_connector))
-    _not = Drop(Series(Drop(Alternative(Text("∼"), Text("~"))), dwsp__))
-    _assertion_sign = Drop(Series(Drop(Alternative(Text("⊢"), Text("|-"))), dwsp__))
+    _not = Drop(Series(Alternative(Text("∼"), Text("~")), dwsp__))
+    _assertion_sign = Drop(Series(Alternative(Text("⊢"), Text("|-")), dwsp__))
     _exists_sign = Drop(Alternative(Text("∃"), Text("€")))
     _nat_number = RegExp('[1-9]\\d*')
-    _cdot = Drop(Alternative(RegExp('[·⋅]'), Drop(Series(Text("."), Drop(Lookahead(_nat_number))))))
+    _cdot = Drop(Alternative(RegExp('[·⋅]'), Series(Text("."), Lookahead(_nat_number))))
     _d4 = Alternative(Series(Text("::"), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text("::"), dwsp__))
     _d3 = Alternative(Series(Alternative(Text(":."), Text(".:")), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Alternative(Text(":."), Text(".:")), dwsp__))
     _d2 = Alternative(Series(Text(":"), dwsp__, Lookahead(_logical_connector)), Series(Lookbehind(_reverse_logical_connector), Text(":"), dwsp__))
@@ -177,10 +185,22 @@ class principiaGrammar(Grammar):
     principia = Series(dwsp__, ZeroOrMore(Series(statement, ZeroOrMore(_LF))), _EOF)
     root__ = principia
     
-    
-parsing: PseudoJunction = create_parser_transition(
-    principiaGrammar)
-get_grammar = parsing.factory # for backwards compatibility, only    
+parsing: PseudoJunction = create_parser_junction(principiaGrammar)
+get_grammar = parsing.factory # for backwards compatibility, only
+
+try:
+    assert RE_INCLUDE == NEVER_MATCH_PATTERN or \
+        RE_COMMENT in (principiaGrammar.COMMENT__, NEVER_MATCH_PATTERN), \
+        "Please adjust the pre-processor-variable RE_COMMENT in file principiaParser.py so that " \
+        "it either is the NEVER_MATCH_PATTERN or has the same value as the COMMENT__-attribute " \
+        "of the grammar class principiaGrammar! " \
+        'Currently, RE_COMMENT reads "%s" while COMMENT__ is "%s". ' \
+        % (RE_COMMENT, principiaGrammar.COMMENT__) + \
+        "\n\nIf RE_COMMENT == NEVER_MATCH_PATTERN then includes will deliberately be " \
+        "processed, otherwise RE_COMMENT==principiaGrammar.COMMENT__ allows the " \
+        "preprocessor to ignore comments."
+except (AttributeError, NameError):
+    pass
 
 
 #######################################################################
@@ -597,7 +617,7 @@ principia_tex_actions = expand_table({
         f"{tex[path[-1].get_attr('left', '')]}{arg}{tex[path[-1].get_attr('right', '')]}",
     'for_all': lambda path, variable, expression:
         f"{expression}" if path[-1].has_attr('subscripted') else f"({variable[0]}){variable[1:]}{expression}",
-    'exists': lambda path, variable, expression: f"(\exists {variable[0]}){variable[1:]}{expression}",
+    'exists': lambda path, variable, expression: fr"(\exists {variable[0]}){variable[1:]}{expression}",
     '*': lambda path, *args:  path[-1].content
 })
 
@@ -635,9 +655,9 @@ modern_tex_actions = expand_table({
     'number, chapter, definition': lambda path, content: content,
     'axiom, theorem': lambda path, formula: f"{formula}",
     'for_all': lambda path, variable, expression:
-        f"\\forall {variable}\;{expression}",
+        fr"\forall {variable}\;{expression}",
     'exists': lambda path, variable, expression:
-        f"\\exists {variable}\;{expression}",
+        fr"\exists {variable}\;{expression}",
     'Not': lambda path, arg: tex['∼'] + arg,
     'ifthen, Or, And': lambda path, left, right: f"{path[-1].get_attr('left', '')}{left}"
         f" {tex[Symbols[path[-1].name]]}{right}{path[-1].get_attr('right', '')}",

@@ -1,4 +1,8 @@
-# logi-grammar
+# This grammar is a bit more lenient than the notation of Russells' and
+# Whitehead's "Principia Mathematica" as described in:
+# Linsky, Bernard, "The Notation in Principia Mathematica",
+# The Stanford Encyclopedia of Philosophy (Fall 2022 Edition),
+# Edward N. Zalta & Uri, <https://plato.stanford.edu/entries/pm-notation/>
 
 #######################################################################
 #
