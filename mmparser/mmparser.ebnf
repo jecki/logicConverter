@@ -1,0 +1,91 @@
+# mmparser-grammar
+
+#######################################################################
+#
+#  EBNF-Directives
+#
+#######################################################################
+
+# Regular expression for implicit whitespace or one of: horizontal, linefeed, vertical
+# Implicit whitespace is denoted by the tilde-character: ~
+@ whitespace  = /\s*/
+
+# Implicit whitespace adjacent to literals: left, right, both, none
+# E.g. if @literalws = right then ")" means the same as `)`~
+@ literalws   = right
+
+# Regular expression for comments, e.g. /#.*(?:\n|$)/
+# Use: /(?:\/\/.*)|(?:\/\*(?:.|\n)*?\*\/)/ for C++-style comments: /* ... */ or // to EOL
+@ comment     = /\$\((?:(?!\$\))\)?[^$]*)*\$\)/   # Kommentare im C++ Stil
+
+# Case-sensitivity: True, False
+@ ignorecase  = False
+
+# Tree-simplification while parsing:  none, flatten, merge_treetops, merge
+@ reduction   = merge_treetops
+
+# Tags that may be replaced with their content while parsing
+@ disposable  = /_\w+/
+
+# Tags that will be dropped with all their content while parsing or any of
+# the special values: strings, backticked, whitespace, regexps
+# Here, EOF and insignificant whitespace (tilde) will be dropped
+@ drop        =  whitespace, strings
+
+database ::= ~ outermost-scope-stmt*
+outermost-scope-stmt ::=
+include-stmt | constant-stmt | stmt
+/* File inclusion command; process file as a database.
+Databases should NOT have a comment in the filename. */
+include-stmt ::= ’$[’ filename ’$]’
+/* Constant symbols declaration. */
+constant-stmt ::= ’$c’ constant+ ’$.’
+/* A normal statement can occur in any scope. */
+stmt ::= block | variable-stmt | disjoint-stmt |
+hypothesis-stmt | assert-stmt
+
+/* A block. You can have 0 statements in a block. */
+block ::= ’${’ stmt* ’$}’
+/* Variable symbols declaration. */
+variable-stmt ::= ’$v’ variable+ ’$.’
+/* Disjoint variables. Simple disjoint statements have
+2 variables, i.e., "variable*" is empty for them. */
+disjoint-stmt ::= ’$d’ variable variable variable* ’$.’
+hypothesis-stmt ::= floating-stmt | essential-stmt
+/* Floating (variable-type) hypothesis. */
+floating-stmt ::= LABEL ’$f’ typecode variable ’$.’
+/* Essential (logical) hypothesis. */
+essential-stmt ::= LABEL ’$e’ typecode MATH-SYMBOL* ’$.’
+assert-stmt ::= axiom-stmt | provable-stmt
+/* Axiomatic assertion. */
+axiom-stmt ::= LABEL ’$a’ typecode MATH-SYMBOL* ’$.’
+/* Provable assertion. */
+provable-stmt ::= LABEL ’$p’ typecode MATH-SYMBOL*
+’$=’ proof ’$.’
+/* A proof. Proofs may be interspersed by comments.
+If ’?’ is in a proof it’s an "incomplete" proof. */
+proof ::= uncompressed-proof | compressed-proof
+uncompressed-proof ::= (LABEL | ’?’)+
+compressed-proof ::= ’(’ LABEL* ’)’ COMPRESSED-PROOF-BLOCK+
+typecode ::= constant
+filename ::= MATH-SYMBOL /* No whitespace or ’$’ */
+constant ::= MATH-SYMBOL
+variable ::= MATH-SYMBOL
+
+PRINTABLE-SEQUENCE ::= _PRINTABLE-CHARACTER+ ~
+MATH-SYMBOL ::= (_PRINTABLE-CHARACTER - ’$’)+ ~
+/* ASCII non-whitespace printable characters */
+_PRINTABLE-CHARACTER ::= [#x21-#x7e]
+LABEL ::= ( _LETTER-OR-DIGIT | ’.’ | ’-’ | ’_’ )+ ~
+_LETTER-OR-DIGIT ::= [A-Za-z0-9]
+COMPRESSED-PROOF-BLOCK ::= ([A-Z] | ’?’)+ ~
+/* Define whitespace between tokens. The -> SKIP
+means that when whitespace is seen, it is
+skipped and we simply read again. */
+WHITESPACE ::= (_WHITECHAR+ | _COMMENT) -> SKIP
+/* Comments. $( ... $) and do not nest. */
+_COMMENT ::= ’$(’ (_WHITECHAR+ (PRINTABLE-SEQUENCE - ’$’))*
+_WHITECHAR+ ’$)’ _WHITECHAR
+/* Whitespace: (’ ’ | ’\t’ | ’\r’ | ’\n’ | ’\f’) */
+_WHITECHAR ::= [#x20#x09#x0d#x0a#x0c]
+

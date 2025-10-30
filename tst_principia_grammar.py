@@ -21,6 +21,8 @@ try:
     import DHParser.log
     from DHParser import testing
     from DHParser.toolkit import re
+    from DHParser import versionnumber
+    print(versionnumber.__version__)
 except ModuleNotFoundError:
     print('Could not import DHParser. Please adjust sys.path in file '
           '"%s" manually' % __file__)
