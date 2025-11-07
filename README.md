@@ -32,6 +32,12 @@ in this directory by typing "python tst_principia_grammar.py" on the command lin
 some examples in the "tests_grammar/REPORT" sub-directory!
 
 
+Possible use cases
+------------------
+
+A possible use case is employing logicConverter as a front-end to generate code for modern
+theorem-provers or verification systems like metamath, metamath0, lean or coq.
+
 License
 -------
 
