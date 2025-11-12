@@ -273,9 +273,13 @@ def unit_from_config(config_str: str, filename: str, allowed_stages=UNIT_STAGES)
         err_head = 'N' if first_section_missing else 'Test NAME:STRING or n'
         err_str = err_head + 'ew section [TEST:PARSER] expected, ' \
                   + 'where TEST is "match", "fail" or "AST"; in file ' \
-                  + '"%s", line %i: "%s"' \
+                  + '"%s", line %i: "%s".' \
                   % (filename, cfg[:pos + 1].count('\n') + 1,
                      cfg[pos:cfg.find('\n', pos + 1)].strip('\n'))
+        i = cfg[:pos].rfind('\n')
+        if i >= 0 and pos - i < 4:
+            err_str += '  A possible cause can also be an insufficient ' \
+                       'indentation of less than 4 characters in a test case!'
         raise SyntaxError(err_str)
     return unit
 
@@ -872,6 +876,8 @@ def grammar_unit(test_unit, parser_factory, transformer_factory, report='REPORT'
                 for stage in transformation_stages:
                     try:
                         data = extract_data(targets[stage][0])
+                        for nd in data.select_if(lambda n: n.has_attr(), include_root=True):
+                            nd.attr = {k: str(v) for k, v in nd.attr.items()}
                         if isinstance(data, Node):
                             compare = flat_string_test(tests, stage, data, test_name,
                                                        parser_name, test_code, errata)
@@ -933,15 +939,15 @@ def grammar_unit(test_unit, parser_factory, transformer_factory, report='REPORT'
                         log_parsing_history(parser, "interrupted_fail_%s_%s.log" %
                                             (parser_name, clean_test_name))
                 raise ctrlC
-            except Exception as e:
-                errata.append('Fail-test "%s" for parser "%s" failed with:\n%s' %
-                              (test_name, parser_name, str(e)))
             except AttributeError as upe:
                 node = Node(ZOMBIE_TAG, "").with_pos(0)
                 cst = RootNode(node).new_error(node, str(upe))
                 errata.append('Unknown parser "{}" in fail test "{}"!'.format(
                     parser_name, test_name))
                 tests.setdefault('__err__', {})[test_name] = errata[-1]
+            except Exception as e:
+                errata.append('Fail-test "%s" for parser "%s" failed with:\n%s' %
+                              (test_name, parser_name, str(e)))
             if 'AST' in tests or report:
                 traverse(cst, {'*': remove_children({TEST_ARTIFACT})})
                 transform(cst)

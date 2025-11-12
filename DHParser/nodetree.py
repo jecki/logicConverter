@@ -1007,8 +1007,9 @@ class Node:  # (collections.abc.Sized): Base class omitted for cython-compatibil
         if self.has_attr():
             if other.has_attr():
                 if ignore_order:
-                    return set(self.attr.items()) == set(other.attr.items())
-                return self.attr == other.attr
+                    return self.attr == other.attr
+                else:
+                    return list(self.attr.items()) == list(other.attr.items())
             return len(self.attr) == 0
             # self has an empty dictionary and other has no attributes
         elif other.has_attr():
@@ -2087,18 +2088,6 @@ class Node:  # (collections.abc.Sized): Base class omitted for cython-compatibil
                 else:
                     empty_tags.add(tag)
         return empty_tags
-
-        # for nd in self.select(LEAF_NODE, include_root=True):
-        #     tag = nd.name
-        #     if nd.result:
-        #         not_empty.add(tag)
-        #         try:
-        #             empty_tags.remove(tag)
-        #         except KeyError:
-        #             pass
-        #     elif tag not in not_empty:
-        #         empty_tags.add(tag)
-        # return empty_tags
 
     def as_xml(self, src: Optional[str] = None,
                indentation: int = 2,
@@ -4066,7 +4055,7 @@ def select_path_if(start_path: Path,
     `match_function` is true, starting from `path`.
     """
 
-    def recursive(path):
+    def recursive(path) -> Iterator[Path]:
         nonlocal match_func, reverse, skip_func
         if match_func(path):
             yield path

@@ -60,18 +60,20 @@ by a comment-block with a sections name:
    for the Python-parser code the compiler produces.
 
 The most notable difference to ordinary DHParser-projects is that
-the DHParser.ebnf-module contains two :py:class:`~parse.Grammar`-classes, one
-for parsing code that strictly follows DHParser's EBNF-syntax
-(:py:class:`ConfigurableEBNFGrammar`) and another one that is able to
-parse many different brands of EBNF-syntax
+DHParser offers two :py:class:`~parse.Grammar`-classes, one
+for parsing code that strictly follows DHParser's EBNF syntax
+(:py:class:`ConfigurableEBNFGrammar`) allowing only the delimiter signs
+(e.g. "=", "|" etc.) to be configured beforehand and
+another one that is able to parse many different brands of EBNF syntax
 (:py:class:`DHParser.ebnf_flavors.heuristic.HeuristicEBNFGrammar`)
-at the cost of parsing speed. When parsing or compiling an EBNF-grammar with
-any of the high-level functions into Python-code, the faster "configurable"
-EBNF-grammar is tried first, and, if that fails with particular errors which
+at the cost of parsing speed. When parsing or compiling an EBNF grammar with
+the very high-level functions from module :py:mod:`DHParser.dsl`
+into Python code, the faster "configurable"
+EBNF-grammar is tried first and, if that fails, with particular errors which
 suggest that the failure might be merely due to the use of a different brand
-of EBNF, a second attempt is made with the slower heuristic EBNF-parser.
+of EBNF, a second attempt is made with the slower heuristic EBNF parser.
 
-The EBNF-compiler is actually split into two classes, :py:class:`EBNFCompiler`,
+The EBNF compiler is actually split into two classes, :py:class:`EBNFCompiler`,
 which contains the EBNF-AST -> Python compiler proper, and
 :py:class:`EBNFDirectives` which is a helper class to keep track of the
 directives used to avoid overburdening the compiler-class with instance
@@ -81,7 +83,7 @@ Just as DHParser's (auto-)generated parser-scripts, the classes contained in
 :py:mod:`DHParser.ebnf` should not be instantiated directly. Other than
 the parser scripts, though, the ebnf-module does not provide Junctions
 with factory-functions for each stage from preprocessing to compiling.
-Instead it provides factory-functions that return one singleton instance
+Instead, it provides factory-functions that return one singleton instance
 per thread of each class, namely:
 
 * :py:func:`~ebnf.get_ebnf_parser`
@@ -97,7 +99,7 @@ These are supplemented by the quick-use-functions:
 
 The following example shows how the classes and functions of the
 ebnf-module can be connected to produce runnable Python-code from
-an EBNF-grammar. It is meant as a help to understand the role of
+an EBNF grammar. It is meant as a help to understand the role of
 these classes better as well as - in a simplified manner - the
 basic working mechanisms of higher level functions like
 :py:func:`DHParser.dsl.create_parser`. In any practical application,
@@ -142,8 +144,8 @@ from a grammar, step by step::
     class ArithmeticGrammar(Grammar):
         r"""Parser for an Arithmetic document.
     <BLANKLINE>
-        Instantiate this class and then call the instance with the
-        source code as argument in order to use the parser, e.g.:
+        Instantiate this class and then call the instance with the source
+        code as the single argument in order to use the parser, e.g.:
             parser = Arithmetic()
             syntax_tree = parser(source_code)
         """
@@ -247,7 +249,7 @@ except ImportError:
 
 from DHParser.compile import CompilerError, Compiler, CompilationResult, compile_source
 from DHParser.configuration import access_thread_locals, get_config_value, \
-    NEVER_MATCH_PATTERN, ALLOWED_PRESET_VALUES
+    set_config_value, NEVER_MATCH_PATTERN, ALLOWED_PRESET_VALUES
 from DHParser.error import Error, AMBIGUOUS_ERROR_HANDLING, WARNING, REDECLARED_TOKEN_WARNING,\
     REDEFINED_DIRECTIVE, UNUSED_ERROR_HANDLING_WARNING, NOTICE, \
     DIRECTIVE_FOR_NONEXISTANT_SYMBOL, UNDEFINED_SYMBOL_IN_TRANSTABLE_WARNING, \
@@ -273,7 +275,8 @@ from DHParser.toolkit import load_if_file, wrap_str_literal, escape_ctrl_chars, 
 from DHParser.transform import TransformerFunc, transformer, remove_brackets, change_name, \
     reduce_single_child, replace_by_single_child, is_empty, remove_children, add_error, \
     remove_tokens, remove_anonymous_tokens, flatten, forbid, assert_content, remove_children_if, \
-    all_of, not_one_of, apply_if, neg, has_parent, BLOCK_LEAVES
+    all_of, not_one_of, apply_if, apply_unless, neg, has_parent, has_child, any_of, \
+    peek, BLOCK_LEAVES
 from DHParser.versionnumber import __version__
 
 
@@ -288,6 +291,8 @@ __all__ = ('DHPARSER_IMPORTS',
            'compile_ebnf_ast',
            'ConfigurableEBNFGrammar',
            'EBNFTransform',
+           'EBNF_AST_Serialization_Table',
+           'ebnf_from_ast',
            'EBNFCompilerError',
            'EBNFDirectives',
            'WHITESPACE_TYPES',
@@ -320,7 +325,7 @@ get_ebnf_preprocessor = ThreadLocalSingletonFactory(preprocessor_factory)
 
 
 def preprocess_ebnf(ebnf: str, source_name="source") -> PreprocessorResult:
-    r"""Preprocesses the @include-directives of an EBNF-source."""
+    r"""Preprocesses the @include-directives of an EBNF source."""
     return get_ebnf_preprocessor()(ebnf, source_name)
 
 
@@ -372,7 +377,7 @@ class ConfigurableEBNFGrammar(Grammar):
         syntax     = ~ { definition | directive | macrodef } EOF
         definition = [modifier] symbol §DEF~ [ OR~ ] expression [MOD_SYM~ hide]
                      ENDL~ &FOLLOW_UP  # [OR~] to support v. Rossum's syntax
-          modifier = (drop | [hide]) MOD_SEP   # node LF after modifier allowed!
+          modifier = (drop | [hide]) !DEF MOD_SEP   # node LF after modifier allowed!
           is_def   = [MOD_SEP symbol] DEF | MOD_SEP is_mdef
           MOD_SEP  = / *: */
 
@@ -466,7 +471,7 @@ class ConfigurableEBNFGrammar(Grammar):
           restricted_range_desc = character [ `-` character ]
         char_ranges = RE_LEADIN range_chain { `|` range_chain } RE_LEADOUT ~
           range_chain = `[` [`^`] { range_desc }+ `]`
-          range_desc = (character | free_char) [ `-` (character | free_char) ]
+          range_desc = (character | free_char) [ [`-`] (character | free_char) ]
 
         character  = (CH_LEADIN | `\x` | `\u` | `\U`) HEXCODE
         free_char  = /[^\n\[\]\\]/ | /\\[nrtfv`´'"(){}\[\]\/\\]/
@@ -517,15 +522,15 @@ class ConfigurableEBNFGrammar(Grammar):
     countable = Forward()
     element = Forward()
     expression = Forward()
-    source_hash__ = "ce3d1cc534e8f0e1da4c557ee8ae87cd"
+    source_hash__ = "67b5b3d311a9afa33ce94010274c9fec"
     disposable__ = re.compile(
-        '(?:countable$|MOD_SYM$|FOLLOW_UP$|no_range$|ANY_SUFFIX$|EOF$|MOD_SEP$|pure_elem$|is_mdef$|component$)')
+        '(?:no_range$|pure_elem$|MOD_SEP$|EOF$|countable$|MOD_SYM$|FOLLOW_UP$|is_mdef$|ANY_SUFFIX$|component$)')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     error_messages__ = {'definition': [(re.compile(r','),
                                         'Delimiter "," not expected in definition!\\nEither this was meant to be a directive and the directive symbol @ is missing\\nor the error is due to inconsistent use of the comma as a delimiter\\nfor the elements of a sequence.')]}
     COMMENT__ = r'(?!#x[A-Fa-f0-9])#.*(?:\n|$)|/\*(?:.|\n)*?\*/|\(\*(?:.|\n)*?\*\)'
-    comment_rx__ = LazyRE(COMMENT__)
+    comment_rx__ = re.compile(COMMENT__)
     WHITESPACE__ = r'\s*'
     WSP_RE__ = mixin_comment(whitespace=WHITESPACE__, comment=COMMENT__)
     wsp__ = Whitespace(WSP_RE__)
@@ -556,7 +561,8 @@ class ConfigurableEBNFGrammar(Grammar):
                         '/[^\\n\\[\\]\\\\]/|/\\\\[nrtfv`´\'"(){}\\[\\]\\/\\\\]/')
     character = Series(
         Alternative(CH_LEADIN, Text("%x"), Text("U+"), Text("u+"), Text("\\x"), Text("\\u"), Text("\\U")), HEXCODE)
-    range_desc = Series(Alternative(character, free_char), Option(Series(Text("-"), Alternative(character, free_char))))
+    range_desc = Series(Alternative(character, free_char),
+                        Option(Series(Option(Text("-")), Alternative(character, free_char))))
     range_chain = Series(Text("["), Option(Text("^")), OneOrMore(range_desc), Text("]"))
     char_ranges = Series(RE_LEADIN, range_chain, ZeroOrMore(Series(Text("|"), range_chain)), RE_LEADOUT, dwsp__)
     restricted_range_desc = Series(character, Option(Series(Text("-"), character)))
@@ -613,7 +619,7 @@ class ConfigurableEBNFGrammar(Grammar):
                         ZeroOrMore(Series(Series(Text("°"), dwsp__), Option(Series(Text("§"), dwsp__)), difference)))
     sequence = Series(Option(Series(Text("§"), dwsp__)), Alternative(interleave, lookaround), ZeroOrMore(
         Series(AND, dwsp__, Option(Series(Text("§"), dwsp__)), Alternative(interleave, lookaround))))
-    modifier = Series(Alternative(drop, Option(hide)), MOD_SEP)
+    modifier = Series(Alternative(drop, Option(hide)), NegativeLookahead(DEF), MOD_SEP)
     FOLLOW_UP = Alternative(Text("@"), Text("$"), modifier, symbol, EOF)
     is_def = Alternative(Series(Option(Series(MOD_SEP, symbol)), DEF), Series(MOD_SEP, is_mdef))
     macrobody = Synonym(expression)
@@ -639,8 +645,8 @@ class ConfigurableEBNFGrammar(Grammar):
     countable.set(Alternative(option, oneormore, element))
     expression.set(Series(sequence, ZeroOrMore(Series(OR, dwsp__, sequence))))
     syntax = Series(dwsp__, ZeroOrMore(Alternative(definition, directive, macrodef)), EOF)
-    resume_rules__ = {'definition': [LazyRE(r'\n\s*(?=@|\w+\w*\s*=)')],
-                      'directive': [LazyRE(r'\n\s*(?=@|\w+\w*\s*=)')]}
+    resume_rules__ = {'definition': [re.compile(r'\n\s*(?=@|\w+\w*\s*=)')],
+                      'directive': [re.compile(r'\n\s*(?=@|\w+\w*\s*=)')]}
     root__ = syntax
 
     def __init__(self, root: Optional[Parser] = None, static_analysis: Optional[bool] = None) -> None:
@@ -715,16 +721,23 @@ def get_ebnf_grammar() -> Grammar:
         update_scanner(grammar, get_config_value('delimiter_set'))
     grammar.mode__ = mode
     # We assume our EBNF-Grammars are well tested and never need the following
-    # which would only slow compiling EBNF-code down.
+    # which would only slow compiling EBNF code down.
     grammar.history_tracking__ = False
     grammar.resume_notices__ = False
     return grammar
 
 
-def parse_ebnf(ebnf: str) -> Node:
+def parse_ebnf(ebnf: str, syntax_variant: str = 'dhparser') -> RootNode:
     """Parses and EBNF-source-text and returns the concrete syntax tree
-    of the EBNF-code."""
-    return get_ebnf_grammar()(ebnf)
+    of the EBNF code."""
+    configured_syntax_variant = get_config_value('syntax_variant')
+    if syntax_variant != configured_syntax_variant:
+        set_config_value('syntax_variant', syntax_variant)
+        root = get_ebnf_grammar()(ebnf)
+        set_config_value('syntax_variant', configured_syntax_variant)
+    else:
+        root = get_ebnf_grammar()(ebnf)
+    return root
 
 
 ########################################################################
@@ -874,7 +887,7 @@ EBNF_AST_transformation_table = {
     "literals":
         [replace_by_single_child],
     "definition":
-        [flatten, remove_children('DEF', 'ENDL'),
+        [flatten, remove_children('DEF', 'ENDL', 'OR'),
          remove_tokens('=')],  # remove_tokens('=') is only for backwards-compatibility
     "modifier": [],
     "expression":
@@ -897,7 +910,7 @@ EBNF_AST_transformation_table = {
     "flowmarker, retrieveop":
         [reduce_single_child],
     "group":
-        [remove_brackets],
+        [remove_brackets], # don't replace by single child or interleave and terms annotated with ->drop might break!
     "oneormore, repetition, option":
         [reduce_single_child, remove_brackets,  # remove_tokens('?', '*', '+'),
          forbid('repetition', 'option', 'oneormore'), assert_content(r'(?!§)(?:.|\n)*')],
@@ -965,6 +978,117 @@ def transform_ebnf(cst: RootNode) -> RootNode:
 
 ########################################################################
 #
+# EBNF abstract syntax tree to EBNF code serialization
+#
+########################################################################
+
+
+def serialize_character(path: Path, content: str) -> str:
+    assert isinstance(content, str)
+    l = len(content)
+    assert l <= 8
+    d, prefix = (2, "\\x") if l <= 2 else (4, "\\u") if l <= 4 else (8, "\\U")
+    return prefix + "0" * (d - l) + content.lower()
+
+
+def serialize_definition(path: Path, *strings) -> str:
+    assert 2 <= len(strings) <= 4
+    for s in strings: assert isinstance(s, str)
+    modifier = (strings[0]) if strings[0][-1] == ':' else ''
+    definiens = strings[1] if modifier else strings[0]
+    definiendum = strings[2] if modifier else strings[1]
+    if len(strings) >= 3 and not modifier:
+        modifier = strings[2] + ':'
+    return ''.join([modifier, definiens, ' = ', definiendum])
+
+
+EBNF_AST_Serialization_Table = expand_table({
+    "symbol, literal, plaintext, free_char, any_char, flowmarker, :Text, " \
+    "RE_LEADIN, RE_LEADOUT, :MOD_SEP, whitespace, retrieveop, name, multiplier":
+        lambda p, s: s,
+    "range_desc, element": lambda p, *ts: ''.join(ts),
+    "char_range, range_chain": lambda p, *ts: ''.join(['[', ''.join(ts), ']']),
+    "char_ranges": lambda p, *ts: ''.join([ts[0], '|'.join(ts[1:-1]), ts[-1]]),
+    "character": serialize_character,
+    "regexp": lambda p, s: ''.join(['/', s, '/']),
+    "procedure": lambda p, s: s + "()",
+    "placeholder": lambda p, s: "$" + s,
+    "hide": lambda p, s: "HIDE",
+    "drop": lambda p, s: "DROP",
+    "directive": lambda p, *ts: ' '.join(
+        ['@', ts[0], ' = ', ', '.join(
+            (s if c.name != 'expression' else f'({s})')
+            for s, c in zip(ts[1:], p[-1].children[1:]))]),
+    "literals": lambda p, *ts: '\n    '.join(ts),
+    "definition": serialize_definition,
+    "expression": lambda p, *ts: ' | '.join(ts),
+    "sequence": lambda p, *ts: ' '.join((s if c.name != 'expression' else f'({s})')
+                                        for s, c in zip(ts, p[-1].children)),
+    "interleave, lookaround":
+        lambda p, *ts: ' '.join((s if c.name not in ('expression', 'sequence') else f'({s})')
+                                for s, c in zip(ts, p[-1].children)),
+    "difference":
+        lambda p, *ts: ' '.join((s if c.name not in ('expression', 'sequence', "interleave")
+                                 else f'({s})')
+                                for s, c in zip(ts, p[-1].children)),
+    "group": lambda p, s: f'({s})',
+    "repetition": lambda p, s: ''.join(["{ ", s, ' }']),
+    "oneormore": lambda p, s: ''.join(["{ ", s, ' }+']),
+    "option": lambda p, s: ''.join(['[ ', s, ' ]']),
+    "counted": lambda p, *ts: (''.join(ts) if 'range' in p[-1] else '*'.join(ts)),
+    "range": lambda p, *ts: ''.join(['{', ts[0], ',', ts[1],'}']),
+    "syntax": lambda p, *ts: '\n'.join(ts),
+    "term": lambda p, *ts: ts[0] + (' -> ' + ts[1] if len(ts) > 1 else ''),
+    "modifier": lambda p, *ts: ''.join(ts)
+})
+
+
+def ebnf_from_ast(ebnf_AST: Node, syntax: str = "DHParser") -> str:
+    """
+    Generates EBNF-code from the abstract syntax tree of an EBNF-grammar.
+
+    The syntax used is the DHParser standard syntax as described in the
+    `DHParser-documentation <https://dhparser.readthedocs.io/en/latest/Reference.html>`_
+    per default. Alternatively, the syntax of the ISO standard for EBNF
+    can be selected by setting the `syntax` parameter to "ISO".
+
+    Presently, there is no structural definition of the EBNF-AST. Rather,
+    it is implicitly defined by the EBNF-parser and EBNF-AST-transformer
+    in this module.
+
+    EXPERIMENTAL!!!
+
+    Parameters:
+        ebnf_AST (Node): The root node of the EBNF Abstract Syntax Tree to be
+            converted into EBNF notation.
+        syntax (str): The syntax-variant to be used for the EBNF-code, must be
+            either "DHParser" (default) or "ISO"
+
+    Raises:
+        ValueError: Raised if the input EBNF AST is determined invalid or if an
+            error occurs during the evaluation process.
+
+    Returns:
+        str: A string representation of the EBNF notation derived from the AST.
+    """
+    assert syntax in ("DHParser", "ISO")
+    try:
+        ebnf = ebnf_AST.evaluate(EBNF_AST_Serialization_Table, path=[ebnf_AST])
+    except Exception as e:
+        raise ValueError("EBNF_AST does not seem to be a valid EBNF AST: " + str(e))
+    if syntax == "ISO":
+        lines = ebnf.splitlines()
+        for n in range(len(lines)):
+            i = lines[n].find(' = ')
+            if i > 0 and lines[n].lstrip()[0:1] != "@":
+                lines[n] = ''.join([lines[n][:i], " ::= ", lines[n][i+3:], ';'])
+        ebnf = '\n'.join(lines)
+    return ebnf
+
+
+
+########################################################################
+#
 # EBNF abstract syntax tree to Python-parser compilation
 #
 ########################################################################
@@ -978,11 +1102,6 @@ from functools import partial
 import os
 import sys
 from typing import Tuple, List, Set, Union, Any, Optional, Callable, cast
-
-try:
-    import regex as re
-except ImportError:
-    import re
 
 try:
     scriptdir = os.path.dirname(os.path.realpath(__file__))
@@ -1021,7 +1140,7 @@ from DHParser.preprocess import nil_preprocessor, PreprocessorFunc, Preprocessor
     gen_find_include_func, preprocess_includes, make_preprocessor, chain_preprocessors
 from DHParser.stringview import StringView
 from DHParser.toolkit import is_filename, load_if_file, cpu_count, \\
-    ThreadLocalSingletonFactory, expand_table, static, CancelQuery
+    ThreadLocalSingletonFactory, expand_table, static, CancelQuery, re
 from DHParser.trace import set_tracer, resume_notices_on, trace_history
 from DHParser.transform import is_empty, remove_if, TransformationDict, TransformerFunc, \\
     transformation_factory, remove_children_if, move_fringes, normalize_whitespace, \\
@@ -1080,7 +1199,7 @@ def parse_word(s: StringView) -> Optional[Node]:
 
 GRAMMAR_FACTORY = r'''
 parsing: PseudoJunction = create_parser_junction({NAME}Grammar)
-get_grammar = parsing.factory # for backwards compatibility, only
+get_grammar = parsing.factory  # for backwards compatibility, only
 
 try:
     assert RE_INCLUDE == NEVER_MATCH_PATTERN or \
@@ -1112,6 +1231,7 @@ def {NAME}Transformer() -> TransformerFunc:
 
 ASTTransformation: Junction = Junction(
     'CST', ThreadLocalSingletonFactory({NAME}Transformer), 'AST')
+get_transformer = ASTTransformation.factory  # for backwards compatibility, only
 '''
 
 
@@ -1119,6 +1239,7 @@ COMPILER_FACTORY = '''
 
 compiling: Junction = create_junction(
     {NAME}Compiler, "AST", "{NAME}")
+get_compiler = compiling.factory  # for backwards compatibility, only
 '''
 
 
@@ -1318,8 +1439,9 @@ def neutralize_unnamed_groups(rxp: str) -> str:
 
 
 class EBNFCompilerError(CompilerError):
-    r"""Error raised by :py:class:`EBNFCompiler` class. (Not compilation errors
-    in the strict sense, see :py:class:`~dsl.CompilationError` in module :py:mod:`~dsl`)"""
+    r"""the Error that is raised by :py:class:`EBNFCompiler` class.
+    (Not compilation errors in the strict sense,
+    see :py:class:`~dsl.CompilationError` in module :py:mod:`~dsl`)"""
     pass
 
 
@@ -1332,22 +1454,22 @@ class EBNFCompiler(Compiler):
     class be called directly. Rather high-level functions like
     :py:func:`~dsl.create_parser` or :py:func:`~dsl.compileEBNF`
     will be used to generate callable :py:class:`~parse.Grammar`-objects
-    or Python-source-code from an EBNF-grammar.
+    or Python-source-code from an EBNF grammar.
 
     Instances of this class must be called with the root-node of the
-    abstract syntax tree from an EBNF-specification of a formal language.
+    abstract syntax tree from an EBNF specification of a formal language.
     The returned value is the Python-source-code of a Grammar class for
     this language that can be used to parse texts in this language.
     See classes :py:class:`compile.Compiler` and :py:class:`parser.Grammar`
     for more information.
 
     Additionally, class EBNFCompiler provides helper methods to generate
-    code-skeletons for a preprocessor, AST-transformation and full
+    code-skeletons for a preprocessor, AST transformation and full
     compilation of the formal language. These method's names start with
     the prefix ``gen_``.
 
     :ivar current_symbols:  During compilation, a list containing the root
-            node of the currently compiled definition as first element
+            node of the currently compiled definition as the first element
             and then the nodes of the symbols that are referred to in
             the currently compiled definition.
 
@@ -1446,7 +1568,7 @@ class EBNFCompiler(Compiler):
             regular expressions found in the current parsing process
 
     :ivar python_src:  A string that contains the python source code that was
-            the outcome of the last EBNF-compilation.
+            the outcome of the last EBNF compilation.
 
     :ivar grammar_name:  The name of the grammar to be compiled
 
@@ -2007,8 +2129,8 @@ class EBNFCompiler(Compiler):
         declarations = ['class ' + self.grammar_name
                         + 'Grammar(Grammar):',
                         'r"""Parser for ' + article + self.grammar_name + ' document.\n\n'
-                        + '    Instantiate this class and then call the instance with the\n'
-                        + '    source code as argument in order to use the parser, e.g.:\n'
+                        + '    Instantiate this class and then call the instance with the source\n'
+                        + '    code as the single argument in order to use the parser, e.g.:\n'
                         + f'        parser = {self.grammar_name}()\n'
                         + f'        syntax_tree = parser(source_code)'
                         + ('\n\n    Grammar:' if self.grammar_source and show_source else '')]
