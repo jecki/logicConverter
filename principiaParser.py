@@ -128,9 +128,9 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "e73492307febd2158e69bf13110ee3ec"
+    source_hash__ = "c0fd99e9a5e72e0d97cdd7b8fe8d95f8"
     early_tree_reduction__ = CombinedParser.MERGE_LEAVES
-    disposable__ = re.compile('(?:_rB$|_affirmation$|_individual$|_not$|_EOF$|_assertion_sign$|_exists_sign$|_assertion$|_dots$|_cdot$|_nat_number$|_lB$|_element$|_LF$)')
+    disposable__ = re.compile('(?:_nat_number$|_element$|_EOF$|_dots$|_affirmation$|_individual$|_exists_sign$|_assertion_sign$|_lB$|_rB$|_assertion$|_not$|_cdot$|_LF$)')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
@@ -182,17 +182,18 @@ class principiaGrammar(Grammar):
     _affirmation = Alternative(for_all, exists, group, predication, proposition, function, variable, restricted_var, constant, number)
     Not = Series(_not, _affirmation)
     _element = Alternative(Not, _affirmation)
-    theorem = Series(_assertion_sign, Option(_dots), formula)
+    axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
     and2 = Alternative(Series(formula1, _a2, formula1), formula1, _element)
     and3 = Alternative(Series(formula2, _a3, formula2), formula2, _element)
     and4 = Alternative(Series(formula3, _a4, formula3), formula3, _element)
     subscript = Series(variable, Series(Drop(Text(" ")), dwsp__))
     operator = Alternative(Or, Series(ifthen, Option(subscript)), Series(ifonlyif, Option(subscript)), equals)
-    axiom = Series(_assertion_sign, Option(_dots), formula, dwsp__, Series(Drop(Text("Pp")), dwsp__))
     definition = Series(formula, dwsp__, Series(Drop(Text("Df")), dwsp__))
-    _assertion = Alternative(definition, axiom, theorem)
+    theorem = Series(_assertion_sign, Option(_dots), formula)
     numbering = Series(Alternative(Series(Drop(Text("*")), dwsp__), Series(Drop(Text("∗")), dwsp__)), chapter, _cdot, counter, dwsp__)
+    sloppy = Series(Option(numbering), Option(_assertion_sign), Option(_dots), formula, Option(Series(dwsp__, Alternative(Series(Drop(Text("Df")), dwsp__), Series(Drop(Text("Pp")), dwsp__)))))
     formula4 = Alternative(Series(and4, _d4, operator, ZeroOrMore(Series(_d4, and4, _d4, operator)), Alternative(Series(_d4, and4), Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and4, _d4), Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d4, and4, ZeroOrMore(Series(_d4, operator, _d4, and4))), and4)
+    _assertion = Alternative(definition, axiom, theorem)
     statement = Series(numbering, _assertion)
     and1.set(Alternative(Series(formula0, _a1, formula0), formula0, _element))
     formula0.set(Series(_element, ZeroOrMore(Series(operator, _element))))
@@ -200,7 +201,7 @@ class principiaGrammar(Grammar):
     formula2.set(Alternative(Series(and2, _d2, operator, ZeroOrMore(Series(_d2, and2, _d2, operator)), Alternative(Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d2, and2, ZeroOrMore(Series(_d2, operator, _d2, and2))), and2))
     formula3.set(Alternative(Series(and3, _d3, operator, ZeroOrMore(Series(_d3, and3, _d3, operator)), Alternative(Series(_d3, and3), Series(_d2, and2), Series(_d1, and1), formula0, _element)), Series(Alternative(Series(and3, _d3), Series(and2, _d2), Series(and1, _d1), formula0, _element), operator, _d3, and3, ZeroOrMore(Series(_d3, operator, _d3, and3))), and3))
     formula.set(Alternative(formula4, formula3, formula2, formula1, formula0))
-    principia = Series(dwsp__, ZeroOrMore(Series(statement, ZeroOrMore(_LF))), _EOF)
+    principia = Series(dwsp__, ZeroOrMore(Series(Alternative(statement, sloppy), ZeroOrMore(_LF))), _EOF)
     root__ = principia
     
 parsing: PseudoJunction = create_parser_junction(principiaGrammar)
@@ -528,15 +529,12 @@ class principiaCompiler(Compiler):
 
 
 compiling: Junction = create_junction(
-    principiaCompiler, "AST", "principia")
+    principiaCompiler, "AST", "LST")
 get_compiler = compiling.factory  # for backwards compatibility, only
 
 
 def compile_principia(ast):
     return get_compiler()(ast)
-
-
-LST_junction = ('AST', get_compiler, 'LST')
 
 
 #######################################################################
@@ -602,7 +600,7 @@ def modern_notation(lst: RootNode) -> str:
     return result
 
 
-modern_junction = ('LST', get_modern_notation, 'modern')
+modern_junction = Junction('LST', get_modern_notation, 'modern')
 
 
 #######################################################################
@@ -681,7 +679,7 @@ def principia_tex(ast: RootNode) -> str:
     return result
 
 
-principia_tex_junction = ('AST', get_principia_tex, 'pm.tex')
+principia_tex_junction = Junction('AST', get_principia_tex, 'pm.tex')
 
 
 #######################################################################
@@ -733,7 +731,7 @@ def modern_tex(lst: RootNode) -> str:
     return result
 
 
-modern_tex_junction = ('LST', get_modern_tex, 'modern.tex')
+modern_tex_junction = Junction('LST', get_modern_tex, 'modern.tex')
 
 
 #######################################################################
@@ -742,7 +740,8 @@ modern_tex_junction = ('LST', get_modern_tex, 'modern.tex')
 # (See DHParser.compile for a description of junctions)
 
 # ADD YOUR OWN POST-PROCESSING-JUNCTIONS HERE:
-junctions = set([ASTTransformation, compiling])
+junctions = set([ASTTransformation, compiling, modern_junction,
+                 principia_tex_junction, modern_tex_junction])
 
 # put your targets of interest, here. A target is the name of result (or stage)
 # of any transformation, compilation or postprocessing step after parsing.
@@ -767,8 +766,8 @@ serializations = expand_table(dict([('*', [get_config_value('default_serializati
 #######################################################################
 
 def pipeline(source: str,
-             target: str = "principia",
-             start_parser: str = "root_parser__",
+             target: Union[str, Set[str]] = "",
+             start_parser: Union[str,Set[str]] = "root_parser__",
              *, cancel_query: Optional[CancelQuery] = None) -> PipelineResult:
     """Runs the source code through the processing pipeline. If
     the parameter target is not the empty string, only the stages required
@@ -776,14 +775,17 @@ def pipeline(source: str,
     explanation of the other parameters.
     """
     global targets
-    target_set = set([target]) if target else targets
+    if target:
+        target_set = {target} if isinstance(target, str) else target
+    else:
+        target_set = targets
     return full_pipeline(
         source, preprocessing.factory, parsing.factory, junctions, target_set,
         start_parser, cancel_query = cancel_query)
 
 
 def compile_src(source: str,
-                target: str = "principia",
+                target: str = "",
                 start_parser: str = "root_parser__",
                 *, cancel_query: Optional[CancelQuery] = None) -> Tuple[Any, List[Error]]:
     """Compiles the source to a single target and returns the result of the compilation
@@ -809,7 +811,7 @@ def compile_src(source: str,
 
 
 def compile_snippet(source_code: str,
-                    target: str = "principia",
+                    target: str = "",
                     start_parser: str = "root_parser__",
                     *, cancel_query: Optional[CancelQuery] = None) -> Tuple[Any, List[Error]]:
     """Compiles a piece of source_code. In contrast to :py:func:`compile_src` the
@@ -829,7 +831,7 @@ def process_file(source: str, out_dir: str = '', target_set: Set[str]=frozenset(
     written to a file with the same name as `result_filename` with an
     appended "_ERRORS.txt" or "_WARNINGS.txt" in place of the name's
     extension. Returns the name of the error-messages file or an empty
-    string, if no errors or warnings occurred.
+    string if no errors or warnings occurred.
     """
     global serializations, targets
     if not target_set:

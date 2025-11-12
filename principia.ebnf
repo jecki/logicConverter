@@ -45,8 +45,9 @@
 #
 #######################################################################
 
-principia       = ~ { statement {_LF}} _EOF
+principia       = ~ { (statement | sloppy) {_LF}} _EOF
   statement     = numbering _assertion
+  sloppy        = [numbering] [_assertion_sign] [_dots] formula [~ ("Df" | "Pp") ]
   numbering     = ("*" | "∗") chapter _cdot counter ~
 
 _assertion      = definition | axiom | theorem
