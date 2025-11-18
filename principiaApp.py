@@ -210,7 +210,7 @@ class principiaApp(tk.Tk):
         self.target_choice = ttk.Combobox(
             self, values=['XML', 'SXML', 'sxpr', 'xast', 'ndst', 'tree'],
             textvariable=self.target_format)
-        if self.target_name.get() not in ('AST', 'CST'):
+        if self.target_name.get().lstrip(PIPE_CHARS) not in ('AST', 'CST'):
             self.target_choice['state'] = tk.DISABLED
         self.result_info = ttk.Label(text='Result:', style="Bold.TLabel")
         self.result = scrolledtext.ScrolledText()
@@ -525,7 +525,7 @@ class principiaApp(tk.Tk):
             if re.fullmatch(r'\s*', source):  return
             source += '\n'
         parser = self.root_name.get()
-        self.compilation_target = self.target_name.get()
+        self.compilation_target = self.target_name.get().lstrip(PIPE_CHARS)
         self.compilation_units = 1
         # self.all_results = principiaParser.pipeline(source, self.compilation_target, parser)
         # self.finish_single_unit()
@@ -549,7 +549,7 @@ class principiaApp(tk.Tk):
         self.errors.tag_delete("currenterror")
         self.errors.tag_delete("error")
         serialization_format = self.target_format.get()
-        target = self.target_name.get()
+        target = self.target_name.get().lstrip(PIPE_CHARS)
         if target not in self.all_results:
             target = self.compilation_target
             self.target_name.set(target)
@@ -601,7 +601,7 @@ class principiaApp(tk.Tk):
         self.result.insert(tk.END, "Compilation finished.\n")
         self.result.insert(tk.END, f"Results written to {self.outdir}.\n")
         self.errors.insert(tk.END, f"Errors (if any) written to {self.outdir}.\n")
-        if self.target_name.get().lower() == 'html':
+        if self.target_name.get().lstrip(PIPE_CHARS).lower() == 'html':
             html_name = os.path.splitext(os.path.basename(self.names[0]))[0] + '.html'
             html_name = os.path.join(self.outdir, html_name)
             self.errors.insert(tk.END, html_name + "\n")
@@ -612,7 +612,7 @@ class principiaApp(tk.Tk):
                             if sys.platform == "darwin" else self.outdir)
 
     def update_result(self, if_tree=False) -> bool:
-        target = self.target_name.get()
+        target = self.target_name.get().lstrip(PIPE_CHARS)
         result = self.all_results.get(target, ("", []))
         result_txt = None
         if isinstance(result[0], Node):
@@ -637,7 +637,7 @@ class principiaApp(tk.Tk):
         return bool(result[0]) or bool(result[1])
 
     def on_target_stage(self, event):
-        target = self.target_name.get()
+        target = self.target_name.get().lstrip(PIPE_CHARS)
         if target in ('AST', 'CST') or isinstance(
                 self.all_results.get(target, (None, []))[0], Node):
             self.target_choice['state'] = tk.NORMAL
@@ -683,7 +683,7 @@ class principiaApp(tk.Tk):
                 tk.messagebox.showerror("IO Error", str(e))
 
     def on_save_result(self):
-        target = self.target_name.get()
+        target = self.target_name.get().lstrip(PIPE_CHARS)
         if self.target_choice['state'] == tk.NORMAL:
             format = 'in format ' + self.target_format.get()
         else:
