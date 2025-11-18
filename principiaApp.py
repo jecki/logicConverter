@@ -130,6 +130,7 @@ class principiaApp(tk.Tk):
 
         self.all_results: PipelineResult = {}
 
+        # vertical='┊', bifurcation='├'
         self.targets = pp_paths(principiaParser.junctions, vertical='┊', bifurcation='├').split('\n')[1:]
         # self.targets = str(as_graph(principiaParser.junctions)).split('\n')[1:]
         # self.targets = [j.dst for j in principiaParser.junctions]
