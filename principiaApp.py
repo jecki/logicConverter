@@ -133,6 +133,7 @@ class principiaApp(tk.Tk):
         # vertical='┊', bifurcation='├'
         self.targets = pp_paths(principiaParser.junctions, vertical='┊', bifurcation='├').split('\n')[1:]
         # self.targets = str(as_graph(principiaParser.junctions)).split('\n')[1:]
+
         # self.targets = [j.dst for j in principiaParser.junctions]
         # self.targets.sort(key=lambda s: s in principiaParser.targets)
         if len(self.targets) > 1:  self.targets.append(ALL_TARGETS_SPECIAL)
