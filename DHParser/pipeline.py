@@ -56,6 +56,11 @@ __all__ = ('Junction',
            'PipelineResult',
            'end_points',
            'connection',
+           'as_paths',
+           'PIPE_CHARS',
+           'pp_paths',
+           'PipeTree',
+           'as_graph',
            'extract_data',
            'run_pipeline',
            'full_pipeline',
@@ -110,6 +115,106 @@ def connection(junctions: Iterable[Junction], target: str, origin: str = "CST") 
         junctions.remove(j)
     result.reverse()
     return result
+
+
+def as_paths(junctions: Set[Junction]) -> Dict[str, List[str]]:
+    """Returns a dictionary that maps each end point to the path from the start
+    (usually "CST") to that end point."""
+    paths = dict()
+    remlist = set()
+    repeat = True
+    while repeat:
+        repeat = False
+        for j in junctions:
+            if j.src in paths:
+                head = paths[j.src]
+                remlist.add(head[-1])
+                new_path = head + [j.dst]
+                if j.dst not in paths or len(new_path) > len(paths[j.dst]):
+                    repeat = True
+                paths[j.dst] = paths[j.src] + [j.dst]
+            else:
+                paths[j.dst] = [j.src, j.dst]
+    for stage in remlist:
+        del paths[stage]
+    return paths
+
+
+PIPE_CHARS = ' ┊┆|│├─└┃┣━┗'  # {' ', '│', '├', '└', '─'}
+
+
+def pp_paths(paths: Union[Dict[str, List[str]], Set[Junction]],
+             vertical = '│ ', bifurcation = '├─') -> str:
+    if isinstance(paths, Set):
+        paths = as_paths(paths)
+    paths = list(paths.values())
+    paths.sort(reverse=True)
+    paths.sort(key=len, reverse=True)
+    l = []
+    for path in paths:
+        k = 0
+        i = 0
+        while k < len(path) and i < len(l):
+            if l[i][:1] in PIPE_CHARS or path[k] != l[i]:
+                if i > 0 and l[i - 1][:1] not in PIPE_CHARS:
+                    l[i] = (bifurcation + l[i]) if l[i][:1] not in PIPE_CHARS else (vertical + l[i])
+                else:
+                    l[i] = vertical + l[i]
+                i += 1
+            else:
+                k += 1
+                i += 1
+        while k < len(path):
+            l.append(path[k])
+            k += 1
+    return '\n'.join(l)
+
+
+class PipeTree(NamedTuple):
+    src: str
+    desc: List[PipeTree]
+    depth: int
+
+    def __repr__(self):
+        return f"PipeTree({self.src}, {self.desc}, {self.depth})"
+
+    def __str__(self):
+        l = []
+        for ch in self.desc:
+            l.extend(["  " + cl for cl in str(ch).split('\n')])
+        return '\n'.join([self.src, *l])
+
+
+def as_graph(junctions: Iterable[Junction]) -> PipeTree:
+    """Returns the junctions as a directed graph."""
+    jdict = dict()
+    for j in junctions:
+        if j.src not in jdict:
+            jdict[j.src] = [j]
+        else:
+            jdict[j.src].append(j)
+    srcs = {j.src for j in junctions}
+    dsts = {j.dst for j in junctions}
+    diff = srcs - dsts
+    if len(diff) > 1:
+        raise ValueError('More than one origin stage within the set of junctions: '
+                         + str(diff))
+    elif len(diff) < 1:
+        raise ValueError('No origin stage found in the set of junctions! (The '
+                         'connected junctions should form a tree, but there '
+                         'seems to be a cycle somewhere...)')
+    src = diff.pop()
+
+    def subtree(j: Junction) -> PipeTree:
+        if j.dst not in jdict:
+            return PipeTree(j.dst, [], 1)
+        else:
+            desc = [subtree(d) for d in jdict[j.dst]]
+            desc.sort()
+            desc.sort(key=lambda x: x.depth)
+            return PipeTree(j.dst, desc, max(child.depth for child in desc) + 1)
+
+    return subtree(Junction(src, None, src))
 
 
 def extract_data(tree_or_data: Union[RootNode, Node, Any]) -> Any:

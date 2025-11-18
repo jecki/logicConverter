@@ -32,7 +32,7 @@ from DHParser.configuration import read_local_config, get_config_values, \
     get_config_value, dump_config_data
 from DHParser.error import Error, ERROR, PARSER_STOPPED_BEFORE_END_WARNING
 from DHParser.nodetree import Node, EMPTY_NODE
-from DHParser.pipeline import PipelineResult, connection
+from DHParser.pipeline import PipelineResult, connection, as_graph, pp_paths, PIPE_CHARS
 from DHParser.testing import merge_test_units
 from DHParser.toolkit import MultiCoreManager
 
@@ -130,10 +130,12 @@ class principiaApp(tk.Tk):
 
         self.all_results: PipelineResult = {}
 
-        self.targets = [j.dst for j in principiaParser.junctions]
-        self.targets.sort(key=lambda s: s in principiaParser.targets)
+        self.targets = pp_paths(principiaParser.junctions, vertical='┊', bifurcation='├').split('\n')[1:]
+        # self.targets = str(as_graph(principiaParser.junctions)).split('\n')[1:]
+        # self.targets = [j.dst for j in principiaParser.junctions]
+        # self.targets.sort(key=lambda s: s in principiaParser.targets)
         if len(self.targets) > 1:  self.targets.append(ALL_TARGETS_SPECIAL)
-        self.compilation_target = list(principiaParser.targets)[0]
+        self.compilation_target = ALL_TARGETS_SPECIAL  # list(principiaParser.targets)[0]
         self.target_name = tk.StringVar(value=self.compilation_target)
         self.target_format = tk.StringVar(
             value=get_config_value('default_serialization', 'sxpr'))
