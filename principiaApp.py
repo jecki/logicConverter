@@ -887,12 +887,12 @@ class principiaApp(tk.Tk):
 
     def on_about(self):
         import random
-        slogans = ("'cause it is the machines that bring order to life!",
-                   "We work hard to make your job expendable!",
-                   "We program pig systems that make your life difficult!",
-                   "8 bit can do it all!",
-                   "The apparatus is always right!",
-                   "Everyone is replacable and should be!")
+        slogans = ('''"'cause it is the machines that bring order to life!"''',
+                   '"We work hard to make your job expendable!"',
+                   '"We program pig systems that make your life hell!"',
+                   '"8 bit can do it all!"',
+                   '"The apparatus is always right!"',
+                   '"Everyone is repleacable and should be!"')
         tk.messagebox.showinfo(
             title="About principia",
             message=("principia was brought to you by:\n\n"
