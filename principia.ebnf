@@ -12,7 +12,7 @@
 
 # Regular expression for implicit whitespace or one of: horizontal, linefeed, vertical
 # Implicit whitespace is denoted by the tilde-character: ~
-@ whitespace  = horizontal
+@ whitespace  = vertical
 
 # Implicit whitespace adjacent to literals: left, right, both, none
 # E.g. if @literalws = right then ")" means the same as `)`~

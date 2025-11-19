@@ -128,14 +128,14 @@ class principiaGrammar(Grammar):
     formula1 = Forward()
     formula2 = Forward()
     formula3 = Forward()
-    source_hash__ = "c0fd99e9a5e72e0d97cdd7b8fe8d95f8"
+    source_hash__ = "5a41ca74e7e554ae540d0ff52284f06b"
     early_tree_reduction__ = CombinedParser.MERGE_LEAVES
-    disposable__ = re.compile('(?:_nat_number$|_element$|_EOF$|_dots$|_affirmation$|_individual$|_exists_sign$|_assertion_sign$|_lB$|_rB$|_assertion$|_not$|_cdot$|_LF$)')
+    disposable__ = re.compile('(?:_affirmation$|_exists_sign$|_nat_number$|_cdot$|_element$|_assertion_sign$|_individual$|_lB$|_not$|_EOF$|_assertion$|_LF$|_rB$|_dots$)')
     static_analysis_pending__ = []  # type: List[bool]
     parser_initialization__ = ["upon instantiation"]
     COMMENT__ = r';.*?(?:\n|$)'
     comment_rx__ = re.compile(COMMENT__)
-    WHITESPACE__ = r'[\t ]*'
+    WHITESPACE__ = r'\s*'
     WSP_RE__ = mixin_comment(whitespace=WHITESPACE__, comment=COMMENT__)
     wsp__ = Whitespace(WSP_RE__)
     dwsp__ = Drop(Whitespace(WSP_RE__))
@@ -782,6 +782,7 @@ def pipeline(source: str,
     return full_pipeline(
         source, preprocessing.factory, parsing.factory, junctions, target_set,
         start_parser, cancel_query = cancel_query)
+
 
 
 def compile_src(source: str,
