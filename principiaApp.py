@@ -95,6 +95,12 @@ class TextLineNumbers(tk.Canvas):
 ALL_TARGETS_SPECIAL = "[all targets]"
 
 
+DEMO_SRC = """; This is merely a demonstration example.
+*1⋅01  P(x)≡(Gr(x,y).Gr(y,5)) Df
+*1⋅02  |- (Gr(7, 6) . Gr(6,5)) => P(7)  Pp
+"""
+
+
 class principiaApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -186,6 +192,7 @@ class principiaApp(tk.Tk):
 
         self.deiconify()
         self.create_widgets()
+        self.source.insert(tk.END, DEMO_SRC)
         self.connect_events()
         self.place_widgets()
 
