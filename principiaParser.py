@@ -496,38 +496,6 @@ class principiaCompiler(Compiler):
         return self.remove_attributes(node)
 
 
-    # def on__a1(self, node):
-    #     return node
-
-    # def on__a2(self, node):
-    #     return node
-
-    # def on__a3(self, node):
-    #     return node
-
-    # def on__a4(self, node):
-    #     return node
-
-    # def on__lB(self, node):
-    #     return node
-
-    # def on__rB(self, node):
-    #     return node
-
-    # def on__logical_connector(self, node):
-    #     return node
-
-    # def on__reverse_logical_connector(self, node):
-    #     return node
-
-    # def on__LF(self, node):
-    #     return node
-
-    # def on__EOF(self, node):
-    #     return node
-
-
-
 compiling: Junction = create_junction(
     principiaCompiler, "AST", "LST")
 get_compiler = compiling.factory  # for backwards compatibility, only
@@ -595,7 +563,7 @@ def get_modern_notation():  return modern_notation
 def modern_notation(lst: RootNode) -> str:
     global modern_notation_actions
     assert lst.stage == 'LST'
-    result = lst.evaluate(modern_notation_actions, path=[lst])
+    result = lst.evaluate_path(modern_notation_actions)
     lst.stage = 'modern'
     return result
 
@@ -674,7 +642,7 @@ def get_principia_tex():  return principia_tex
 def principia_tex(ast: RootNode) -> str:
     global principia_tex_actions
     assert ast.stage == 'AST'
-    result = ast.evaluate(copy.deepcopy(principia_tex_actions), path=[ast])
+    result = ast.evaluate_path(copy.deepcopy(principia_tex_actions))
     ast.stage = 'pm.tex'
     return result
 
@@ -720,13 +688,14 @@ modern_tex_actions = expand_table({
     '*': lambda path, *args:  path[-1].content
     })
 
+
 def get_modern_tex():  return modern_tex
 
 
 def modern_tex(lst: RootNode) -> str:
     global modern_tex_actions
     assert lst.stage == 'LST'
-    result = lst.evaluate(copy.deepcopy(modern_tex_actions), path=[lst])
+    result = lst.evaluate_path(copy.deepcopy(modern_tex_actions))
     lst.stage = 'modern.tex'
     return result
 

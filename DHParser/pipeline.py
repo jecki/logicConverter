@@ -140,7 +140,7 @@ def as_paths(junctions: Set[Junction]) -> Dict[str, List[str]]:
     return paths
 
 
-PIPE_CHARS = ' ┊┆|│├─└┃┣━┗'  # {' ', '│', '├', '└', '─'}
+PIPE_CHARS = ' ┊┆|│├─└┃┣┗━'  # {' ', '│', '├', '└', '─'}
 
 
 def pp_paths(paths: Union[Dict[str, List[str]], Set[Junction]],
