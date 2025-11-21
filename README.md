@@ -35,13 +35,21 @@ some examples in the "tests_grammar/REPORT" sub-directory!
 Possible use cases
 ------------------
 
-A possible use case is employing logicConverter as a front-end to generate code for modern
-theorem-provers or verification systems like metamath, metamath0, lean or coq.
+A possible use case are:
+
+* Support for (digital) editions of historical texts that use the 
+  Principia Mathematica notation: You type the formula into the 
+  digital edition and get the corresponding modern notation, or the
+  TeX-representation of the Principia Mathematica notation.
+
+* Employing logicConverter as a front-end to generate code for modern
+  theorem-provers or verification systems like metamath, metamath0, lean or coq.
+
 
 License
 -------
 
-logi is open source software under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
+logiConverter is open source software under the [Apache 2.0 License](https://www.apache.org/licenses/LICENSE-2.0)
 
 Copyright 2022 Eckhart Arnold <arnold@badw.de>, Bavarian Academy of Sciences and Humanities
 
