@@ -89,7 +89,7 @@ def run_grammar_tests(fn_pattern, get_grammar, get_transformer):
             testdir = os.path.abspath(testdir)
     else:
         testdir = os.path.join(scriptpath, TEST_DIRNAME)
-    DHParser.log.start_logging(os.path.join(testdir, LOGGING))
+    # DHParser.log.start_logging(os.path.join(testdir, LOGGING))
     error_report = testing.grammar_suite(
         testdir, get_grammar, get_transformer,
         fn_patterns=[fn_pattern], report='REPORT', verbose=True,
