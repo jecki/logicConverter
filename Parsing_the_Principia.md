@@ -20,7 +20,7 @@ If you have ever heard of regular expressions, as I trust most Digital Humanists
 Part 1: A primer on formal grammars
 -----------------------------------
 
-*Building a parser for Arithmetic Formulae*
+### Building a parser for Arithmetic Formulae
 
 Before we dive in the the Russell-Peano notation, which I expect only few people to know, let's start with a notation that everybody knows already from school, namely, that of simple numeric formulae like:
 
@@ -29,6 +29,8 @@ Before we dive in the the Russell-Peano notation, which I expect only few people
 
 You'll notice that we already use a computerized version of these formulae, where instead of using a centered dot for multiplication, we type an asterisk `*`. The simple reason for this is that the central dot is nowhere to be found on the keyboard. (It could be copy and pasted from a Unicode table but that would be rather laborious if you had to do it all the time. On a computer you would usually
 also type `/` instead of the colon `:`, but we'll leave the colon `:` here, for the time being.)
+
+#### Abstract syntax trees of arithmetic formulae
 
 What we need, if we want to make the formulae machine-readable is a parser that reads those formulae and a converter that turns them into a data-structure that is directly processable by the computer and which is called the "syntax tree" of the formula. You might actually also remember this from school, though probably under a different name. In German schools this is called "Termgliederung". (Let me at this point express my gratitude to my math teacher from school, Dr. Frederich, who has taught me this and many other beautiful things about mathematics.) Now, what does the "Termgliederung" of these two formulae look like (I hope, you appreciate a bit of ascii art):
 
@@ -59,3 +61,10 @@ It is also possible to build a tree representation that still contains all those
 
 As a little **exercise**, you might want to draw the abstract tree for a variant of the second formula without the round brackets. Do you see and understand the difference?
 
+#### Representations of abstract syntax trees
+
+In the example, before, we have represented the abtract syntax trees of arithmetic graphically (if only by using ascii-art). However, when dealing with abstract syntax trees in a (software-)development context, it is very useful to also have a "serial" representation of abstract syntax trees in a text-format that is both easy to read for humans *and* machines. The graphical representation would be just as hard to "parse" (i.e. to read and turn into a manageable data structure like a linked tree.) if not harder than the original formula. Nothing much would have been won, thus the simple serialized forms. 
+
+#### A grammar for arithmetic formulae
+
+Now that we know where would 
