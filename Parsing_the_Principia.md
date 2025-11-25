@@ -3,6 +3,7 @@ Parsing the Principia
 
 *An introduction to coding EBNF-grammars and building parsers for logical formulae.*
 
+
 Introduction
 ------------
 
@@ -20,6 +21,7 @@ If you have ever heard of regular expressions, as I trust most Digital Humanists
 Part 1: A primer on formal grammars
 -----------------------------------
 
+
 ### Building a parser for Arithmetic Formulae
 
 Before we dive in the the Russell-Peano notation, which I expect only few people to know, let's start with a notation that everybody knows already from school, namely, that of simple numeric formulae like:
@@ -29,6 +31,7 @@ Before we dive in the the Russell-Peano notation, which I expect only few people
 
 You'll notice that we already use a computerized version of these formulae, where instead of using a centered dot for multiplication, we type an asterisk `*`. The simple reason for this is that the central dot is nowhere to be found on the keyboard. (It could be copy and pasted from a Unicode table but that would be rather laborious if you had to do it all the time. On a computer you would usually
 also type `/` instead of the colon `:`, but we'll leave the colon `:` here, for the time being.)
+
 
 #### Abstract syntax trees of arithmetic formulae
 
@@ -61,16 +64,69 @@ It is also possible to build a tree representation that still contains all those
 
 As a little **exercise**, you might want to draw the abstract tree for a variant of the second formula without the round brackets. Do you see and understand the difference?
 
+
 #### Representations of abstract syntax trees
 
 In the example, before, we have represented the abtract syntax trees of arithmetic graphically (if only by using ascii-art). However, when dealing with abstract syntax trees in a (software-)development context, it is very useful to also have a "serial" representation of abstract syntax trees in a text-format that is both easy to read for humans *and* machines. One important use case where becomes important to write down syntax trees in a convenient form, are test-cases. And, believe me, you'll write a lot of test cases when developing any non-trivial parser. Thus the need for simple serialized representations of syntax trees. In the following I will briefly present three different forms of representing tree structures.
 
 The serialized tree notation that is probably most well known to digital humanists is, of course, XML. In XML a node is written as a pair of an opening tag and a closing tags both of which are demarked with angle brackets `<` `>`. The content of a node, i.e. all branches and leaves further down the tree, is written between the opening and closing tag. (Mind: not between the angle brackets, because that is the "tag name" or "node name" or "node type", all of which are synonyms, although only "tag name" is XML-terminology proper.). For example `<tag>content</tag>` is a leaf node with the string "content" as its content. The content can be other tags, a string of characters or a mixture of both ("mixed content" in XML-terminology). The latter, however, is not needed for representing syntax trees, because a node either branches out to other nodes or is a "leaf" with string content only. Another feature of XML that is quite useful but not needed for syntax trees are attributes. We won't discuss this here or go into any more depth as there a plenty of good beginner's tutorial's for XML on the web. A good starting point is the [w3schools XML tutorial](https://www.w3schools.com/xml/). There exists a [formal specification of XML](https://www.w3.org/TR/2006/REC-xml11-20060816/) with all the details including a full EBNF grammar of XML by the w3c. (You'll learn below what an "EBNF grammar" is.)
 
-Written in XML the syntax tree of the two trivial arithmetic formulae above look like this:
+Written in XML, the syntax tree of the two trivial arithmetic formulae above looks like this:
 
+    <plus>
+      <num>2</num>
+      <mul>
+        <num>4</num>
+        <num>3</num>
+      </mul>
+    </plus>
+
+    <div>
+      <num>49</num>
+      <minus>
+        <num>8</num>
+        <num>1</num>
+      </minus>
+    </div>
+
+If this looks rather clumsy to you, you are absolutely right. This is due to XML being a rather verbose format that works best when you have a lot of text with a few tags in between, but not so well if you want to encode data, where, naturally, every item is surrounded by tags. There are much more elegant ways to write down tree-structures. For example, one could simply write them as indented text like this:
+
+    plus
+      num "2"
+      mul
+        num "4"
+        num "3"
+
+    div
+      num "49"
+      minus
+        num "8"
+        num "1"
+
+This is about as compact as it gets, except that it is not possible to write short tree structures on a single line as could be done with XML. There exists, however, a venerable old notation for tree structures that allows to write trees in a non-verbose manner either on a single line or in multiple lines. This notation is called S-expression. (S-expressions are well known to anyone who has ever used any of the Lisp-family of computer languages. In Lisp-family languages one directly writes down the program as an abstract syntax tree which makes developing macros or self-altering programs much easier.) The S-expression notation for the two arithmetic formulae above looks like this:
+
+    (plus 
+      (num "2") 
+      (mul 
+        (num "4") 
+        (num "3")))  
+
+or, as a one-liner: `(plus (num "2") (mul (num "4") (num "3")))`. The most concise possible form would be: `(+ 2 (* 4 3))`
+
+    (div 
+      (num "49") 
+      (minus 
+        (num "8") 
+        (num "1")))
+
+or, as a one-liner: `(div (num "49") (minus (num "8") (num "1")))`. The most concise possible form would be: `(: 49 (- 8 1))`
+
+The only downside of S-expression is that you need to keep track of all the opened parantheses. However, modern editors help by highlighting the matching parantheses if you use the Lisp or Scheme mode. In the following, I will mostly use S-expressions for the syntax trees.
 
 
 #### A grammar for arithmetic formulae
 
-Now that we know where would 
+Now that we know where would like to arrive at, we can start to think about developing a parser for arithmetic formulae that reads a formula and produces a syntax tree. We will do so by defining a formal grammar for arithmetic formulae. The nice thing about formal grammars is that they can be used to automatically generate a parser from the grammar that is able to digest any formula or, more generally, any "text" that adheres to the rules of the grammar. The program that generates a parser from a grammar is called a "parser generator".
+
+Now, in order to specify the formal grammar of a formal language, you need another formal language, namely that of the formal grammars themselves. A common standard for formal grammars is the EBNF (Extended Backus-Naur Form)-language. 
+
