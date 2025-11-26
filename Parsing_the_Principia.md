@@ -45,17 +45,20 @@ What we need, if we want to make the formulae machine-readable is a parser that 
       +
 
 ```mermaid
-graph TD
-    D["2"] --> B["+"]
+graph BT
+    plus["+"] 
+    times["*"]
+    two["2"]
+    four["4"]
+    three["3"]
 
-    E["4"] --> C["*"]
+    plus --> two
+    plus --> times
+    times --> four
+    times --> three
 
-    F["3"] --> C["*"]
-
-    C["*"] --> B["+"]
-
-    %% Arrange numbers on one line
-    D --- E --- F
+    %% Hint to keep the numbers on one horizontal line
+    two --- four --- three
 ```
 
     49 : (8 - 1)
