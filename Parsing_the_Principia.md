@@ -22,7 +22,7 @@ Part 1: A primer on formal grammars
 -----------------------------------
 
 
-### Building a parser for Arithmetic Formulae
+**Building a parser for Arithmetic Formulae**
 
 Before we dive in the the Russell-Peano notation, which I expect only few people to know, let's start with a notation that everybody knows already from school, namely, that of simple numeric formulae like:
 
@@ -165,18 +165,40 @@ The basic elements that EBNF consists of are:
 
 2. **Sequences** of items that follow each other. For example, `"number" ~ /[0-9]/` is the text "number" followed by zero or more whitespace characters, followed by a digit.
 
-3. **Alternatives** which are denoted by a vertical dash `|` between two items, e.g. `"a" | "A"`. Following the convention of "parsing expression grammars" the dash means the first alternative or, if that does not match the following text, then the second alternative. It does not mean the first *or* the second alternative or *both* as it is understood by some parsers. So, the dash is not symmetric
+3. **Alternatives** which are denoted by a vertical dash `|` between two items, e.g. `"a" | "A"`. Following the convention of "parsing expression grammars" the dash means the first alternative or, if that does not match the following text, then the second alternative. It does not mean the first *or* the second alternative or *both* as it is understood by some parsers. So, the dash is not symmetric.
+
+    Also note, that sequences bind stronger than alternatives. So `"a" "b" | "c"` means the the sequence "ab" or the letter "c". In order to express "a" followed by "b" or "c" you need to use parantheses for grouping, e.g. `"a" ("b" | "c")`.
 
 4. **Optional items** are written in square brackets `[ ... ]`. For example, a "positive or negative digit" could be written as: `[ "-" ] /[1-9]/`
 
 5. **Repeated items** are written in curly brackets `{ ... }`. For example a "positive or negative number" could be written as: `[ "-" ] /[1-9]/ { /[0-9]/ }`. Note that the curly braces mean "zero or more repetitions", so in the just given example, "-2" would be matched just as `-255`.
 
-6. Finally, **definitions** (for historical reasons also often called "production rules") assign an expression to a **symbol**, e.g. `number = [ "-" ] /[1-9]/ { /[0-9]/ }`. The `=`-sign is here called the assignment sign or "operator". It is possible to refer to symbols in other productions rules, simply by putting them somewhere on the right and side of the of the assignment operator, e.g. `addition = number "+" number`
+6. Finally, **definitions** (for historical reasons also often called "production rules") assign an expression to a **symbol**, e.g. `number =  [ "-" ] /[1-9]/ { /[0-9]/ } | "0"`. The `=`-sign is here called the "assignment sign". It is possible to refer to symbols in other productions rules, simply by putting them somewhere on the right and side of the of the assignment operator, e.g. `addition = number "+" number`
 
     The symbols on the left hand side will reappear in the syntax tree aus node-names. For example, the trivial grammar `addition = number "+" number` if applied to the formula "5+6" yields the syntax tree: (addition (number "5") (number "6")). 
 
-An EBNF-grammar is simply a sequence of definitions that is usually ordered top-down from the most comprehensive symbol, typically a symbol for the entire document, to the more particular symbols of the document-parts. Here is a trivial example...
+An EBNF-grammar is simply a sequence of definitions that is usually ordered top-down from the most comprehensive symbol, typically a symbol for the entire document, to the more particular symbols of the document-parts. Let's illustrate this with a simple example, a grammar for parsing a sequence of sums of two numbers, one written below the next, e.g.:
 
+	3 + 5
+	211 + 32
+	0 + 4
+
+Now, what could a grammar for this trivial form look like:
+
+	sums   = sum { lf sum }
+	sum    = ws number ws "+" ws number ws
+	number = [ "-" ] /[1-9]/ { /[0-9]/ } | "0"
+	ws     = { " " }
+	lf     = /\n/
+
+Note that `\n` stands for linefeed and that `/\n/` is a regular expression that captures a single linefeed. Also, you may notice that the definition for `ws` (whitespace) is makes whitespace inherently otpional (i.e. it also matches a zero-length part of the text). It is usually a bad practice to define a symbol in such a way that it is inherently optional. It is makes grammars much more understandable if symbols are  defined so as to capture (or "match") a string of at least the length one and then surround the symbol with square brackets in all those places where its use is optional. Here is a little exercise can you change the definition of the symbol `ws` in such a way that it is not inherently optional, anymore and then adjust the places where whitespace is used so that the "meaning" of the grammar will not change, i.e. the same documents will be valid or invalid according to the grammar as before. Incidently, this also shows that one and the same language 
+(understood as the set of valid texts in this language) can be described by different grammars. 
+
+Let's pause for a moment and reflect about what we have achieved by writing down the grammar for a formal language. First of all the grammar allows us to decide which text-strings are valid according to the grammar and which are not or, put it differently a grammar allows to decide the syntactic correctnes of statements in a formal language and in this set defines the syntax of a formal language. 
+
+However, a grammar does not unambigously determine the syntax tree of a language unambgiously. While it is true that one and the same grammar always yields one and the same syntax tree for the same valid document in a formal language, the just noted fact that different grammars can describe one and the same language implies that a grammar generally does not determine the structure of the syntax trees for a language without unambiguously. Also grammar do, of course, say nothing about the *meaning* of the statements of a language. 
+
+We will not delve into this topic deeper, here. Instead, we will next construct a grammar for a less trivial case, namely, that of arithmetic formulae with all four basic arithmetic operations and of arbitrary size and complexity.
 
 
 ### A grammar for arithmetic formulae

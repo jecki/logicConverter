@@ -1,2 +1,4 @@
 *.pyc
 **/LOGS/
+.idea/
+**/REPORT/
