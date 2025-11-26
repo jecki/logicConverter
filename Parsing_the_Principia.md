@@ -46,8 +46,8 @@ What we need, if we want to make the formulae machine-readable is a parser that 
 
 ```mermaid
 graph TD
-    two["2"] --> plus["+"]
-    four["4"] --> times["*"]
+    two["2"]   --> plus["+"]
+    four["4"]  --> times["*"]
     three["3"] --> times["*"]
     times["*"] --> plus["+"]
 ```
@@ -59,6 +59,14 @@ graph TD
      |    /
      \   /
        :
+
+```mermaid
+graph TD
+    fortynine["49"] --> div[":"]
+    eight["8"]      --> minus["-"]
+    one["-"]        --> minus["-"]
+    minus["-"]      --> div[":"]
+```
 
 
 As you can can see, the "Termgliederung" looks like an upside down tree. In this case it is even a binary tree, but this is merely reflects the contingent fact that all relations that we deal with in this trivial example, i.e. `+`, `-`, `*`, `:`, are binary relations. Generally speaking, the syntactical structure of any formula is tree-structure that consists of "nodes" and "branches" and where every node can have an arbitrary number "children", a "child" being a node that is directly connected via a branch to its "parent" node. (You can think of a "node" as a point where a tree branches out.)
