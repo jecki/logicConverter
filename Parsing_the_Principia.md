@@ -61,6 +61,29 @@ graph BT
     times --> four
     times --> three
 ```
+```mermaid
+graph BT
+    plus["+"] 
+    times["*"]
+    two["2"]
+    four["4"]
+    three["3"]
+
+    %% Tree edges
+    plus --> two
+    plus --> times
+    times --> four
+    times --> three
+
+    %% Force horizontal alignment
+    alignTop[ ]:::invisible
+    alignTop --- two
+    alignTop --- four
+    alignTop --- three
+
+    classDef invisible fill=transparent,stroke=transparent;
+```
+
 
     49 : (8 - 1)
      |    \   /
