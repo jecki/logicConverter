@@ -48,22 +48,22 @@ What we need, if we want to make the formulae machine-readable is a parser that 
 graph BT
     plus["+"] 
     times["*"]
+    two["2"]
+    four["4"]
+    three["3"]
 
-    %% Invisible subgraph for alignment
-    subgraph topRow[ ]
-        direction LR
-        two["2"]
-        four["4"]
-        three["3"]
-    end
-    class topRow noBox
-
+    %% Tree edges
     plus --> two
     plus --> times
     times --> four
     times --> three
 
-    classDef noBox fill=transparent,stroke=transparent;
+    %% Invisible alignment node to keep 2, 4, 3 on one row
+    alignTop[ ]
+    alignTop --- two
+    alignTop --- four
+    alignTop --- three
+    style alignTop fill:none,stroke:none;
 ```
 
     49 : (8 - 1)
