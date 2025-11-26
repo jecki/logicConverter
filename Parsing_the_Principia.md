@@ -48,17 +48,18 @@ What we need, if we want to make the formulae machine-readable is a parser that 
 graph BT
     plus["+"] 
     times["*"]
-    two["2"]
-    four["4"]
-    three["3"]
+
+    subgraph topRow
+        direction LR
+        two["2"]
+        four["4"]
+        three["3"]
+    end
 
     plus --> two
     plus --> times
     times --> four
     times --> three
-
-    %% Hint to keep the numbers on one horizontal line
-    two --- four --- three
 ```
 
     49 : (8 - 1)
