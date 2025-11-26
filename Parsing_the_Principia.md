@@ -49,41 +49,22 @@ graph BT
     plus["+"] 
     times["*"]
 
-    subgraph topRow
+    %% Invisible subgraph for alignment
+    subgraph topRow[ ]
         direction LR
         two["2"]
         four["4"]
         three["3"]
     end
+    class topRow noBox
 
     plus --> two
     plus --> times
     times --> four
     times --> three
+
+    classDef noBox fill=transparent,stroke=transparent;
 ```
-```mermaid
-graph BT
-    plus["+"] 
-    times["*"]
-    two["2"]
-    four["4"]
-    three["3"]
-
-    %% Tree edges
-    plus --> two
-    plus --> times
-    times --> four
-    times --> three
-
-    %% Force horizontal alignment
-    alignTop[ ]:::invisible
-    alignTop --- two
-    alignTop --- four
-    alignTop --- three
-
-    classDef invisible fill=transparent,stroke=transparent;
-```
-
 
     49 : (8 - 1)
      |    \   /
