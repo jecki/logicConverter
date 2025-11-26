@@ -33,7 +33,7 @@ You'll notice that we already use a computerized version of these formulae, wher
 also type `/` instead of the colon `:`, but we'll leave the colon `:` here, for the time being.)
 
 
-#### Abstract syntax trees of arithmetic formulae
+### Abstract syntax trees of arithmetic formulae
 
 What we need, if we want to make the formulae machine-readable is a parser that reads those formulae and a converter that turns them into a data-structure that is directly processable by the computer and which is called the "syntax tree" of the formula. You might actually also remember this from school, though probably under a different name. In German schools this is called "Termgliederung". (Let me at this point express my gratitude to my math teacher from school, Dr. Frederich, who has taught me this and many other beautiful things about mathematics.) Now, what does the "Termgliederung" of these two formulae look like (I hope, you appreciate a bit of ascii art):
 
@@ -64,7 +64,7 @@ graph TD
 graph TD
     fortynine["49"] --> div[":"]
     eight["8"]      --> minus["-"]
-    one["-"]        --> minus["-"]
+    one["1"]        --> minus["-"]
     minus["-"]      --> div[":"]
 ```
 
@@ -82,7 +82,7 @@ It is also possible to build a tree representation that still contains all those
 As a little **exercise**, you might want to draw the abstract tree for a variant of the second formula without the round brackets. Do you see and understand the difference?
 
 
-#### Representations of abstract syntax trees
+### Representations of abstract syntax trees
 
 In the example, before, we have represented the abtract syntax trees of arithmetic graphically (if only by using ascii-art). However, when dealing with abstract syntax trees in a (software-)development context, it is very useful to also have a "serial" representation of abstract syntax trees in a text-format that is both easy to read for humans *and* machines. One important use case where becomes important to write down syntax trees in a convenient form, are test-cases. And, believe me, you'll write a lot of test cases when developing any non-trivial parser. Thus the need for simple serialized representations of syntax trees. In the following I will briefly present three different forms of representing tree structures.
 
@@ -138,20 +138,41 @@ or, as a one-liner: `(plus (num "2") (mul (num "4") (num "3")))`. The most conci
 
 or, as a one-liner: `(div (num "49") (minus (num "8") (num "1")))`. The most concise possible form would be: `(: 49 (- 8 1))`
 
-The only downside of S-expression is that you need to keep track of all the opened parantheses. However, modern editors help by highlighting the matching parantheses if you use the Lisp or Scheme mode. In the following, I will mostly use S-expressions for the syntax trees.
+The only downside of S-expression is that you need to keep track of all the opened parantheses. However, modern editors help by highlighting the matching parantheses if you use the Lisp or Scheme mode. In the following, I will mostly use S-expressions for the syntax trees. 
 
-There are, of course, may other alternatives to representing tree structural serially in text-form. In the web-development world and for Javascript/TypedScript-based projects the (JSON)[https://www.json.org/json-en.html]-based [unist](https://github.com/syntax-tree/unist) might be a good alternative. However, they are a bit less (human-)readable than S-expressions, so we will stick to those. 
+In the kind of S-expressions that are used, here, an S-expression is always enclosed in a pair of parentheses and starts with the name of the node, e.g. "div", "num", "minus", that is followed by at least a single blank and then the content of the node which can be either a sequence of S-expressions or a text-string that is written in quotation marks. (There is no "mixed mode" here like in XML.) 
+
+Please observe that the only data type that occurs in a syntax tree is a text-string. This does not mean that further types could be introduced if the syntax tree is transformed into some kind of "document object model".
+
+There are, of course, manyy other alternatives to representing tree structural serially in text-form. In the web-development world and for Javascript/TypedScript-based projects the (JSON)[https://www.json.org/json-en.html]-based [unist](https://github.com/syntax-tree/unist) might be a good alternative. However, they are a bit less (human-)readable than S-expressions, so we will stick to those. 
 
 
-#### A grammar for arithmetic formulae
+### EBNF: A meta-language for formal notations
 
 Now that we know where would like to arrive at, we can start to think about developing a parser for arithmetic formulae that reads a formula and produces a syntax tree. We will do so by defining a formal grammar for arithmetic formulae. The nice thing about formal grammars is that they can be used to automatically generate a parser from the grammar that is able to digest any formula or, more generally, any "text" that adheres to the rules of the grammar. The program that generates a parser from a grammar is called a "parser generator".
 
 Now, in order to specify the formal grammar of a formal language, you need another formal language, namely that of the formal grammars themselves. A common standard for formal grammars is the EBNF (Extended Backus-Naur Form)-language. 
 
-There are different variants of EBNF, but usually they only differ with respect to which signs they use for definitions (e.g. `::=` or `=` or `<--`), or other elements and whether lines end with a semicolon ´;` or not, and how "terminal symbols" (i.e. parts of the language that are not composed of other parts like the numbers in our case) are written. We will stick to the [EBNF-variant](https://dhparser.readthedocs.io/en/latest/Reference.html#ebnf-reference) that [DHParser](https://gitlab.lrz.de/badw-it/DHParser) uses.
+There are different variants of EBNF, but usually they only differ with respect to which signs they use for definitions (e.g. `::=` or `=` or `:`), or other elements and whether lines end with a semicolon ´;` or not, and how "terminal symbols" (i.e. parts of the language that are not composed of other parts like the numbers in our case) are written. We will stick to the [EBNF-variant](https://dhparser.readthedocs.io/en/latest/Reference.html#ebnf-reference) that [DHParser](https://gitlab.lrz.de/badw-it/DHParser) uses.
 
 The basic elements that EBNF consists of are:
 
-1. 
+1. **Atomic items** (or "terminals"): These are in the simple most case strings of characters enclosed in quotation marks, e.g. `"1"` or `"abc"` or character classes, e.g. `/[0-9]/` for all digits from 0 to 9 or full fledged regular expressions enclose by forward slashes, e.g. `/\d+/` for a sequence of digits.
 
+    A special atomic item is the tilde sign ~ for optional insignificant whitespace that may safely be ignored, so that the formulae 2+4*3 and 2 + 4 * 3 are really the same formulae although the sequence of characters that make up the formula is not the same and almost twice the size in the latter case.
+
+2. **Sequences** of items that follow each other. For example, `"number" ~ /[0-9]/` is the text "number" followed by zero or more whitespace characters, followed by a digit.
+
+3. **Alternatives** which are denoted by a vertical dash `|` between two items, e.g. `"a" | "A"`. Following the convention of "parsing expression grammars" the dash means the first alternative or, if that does not match the following text, then the second alternative. It does not mean the first *or* the second alternative or *both* as it is understood by some parsers. So, the dash is not symmetric
+
+4. **Optional items** are written in square brackets `[ ... ]`. For example, a "positive or negative digit" could be written as: `[ "-" ] /[1-9]/`
+
+5. **Repeated items** are written in curly brackets `{ ... }`. For example a "positive or negative number" could be written as: `[ "-" ] /[1-9]/ { /[0-9]/ }`. Note that the curly braces mean "zero or more repetitions", so in the just given example, "-2" would be matched just as `-255`.
+
+6. Finally, **definitions** (for historical reasons also often called "production rules") assign an expression to a **symbol**, e.g. `number = [ "-" ] /[1-9]/ { /[0-9]/ }`. The `=`-sign is here called the assignment sign or "operator". It is possible to refer to symbols in other productions rules, simply by putting them somewhere on the right and side of the of the assignment operator, e.g. `addition = number "+" number`
+
+    The symbols on the left hand side will reappear in the syntax tree aus node-names. For example, the trivial grammar `addition = number "+" number` if applied to the formula "5+6" yields the syntax tree: (addition (number "5") (number "6")). 
+
+An EBNF-grammar is simply a sequence 
+
+### A grammar for arithmetic formulae
