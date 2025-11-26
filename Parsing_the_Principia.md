@@ -44,6 +44,20 @@ What we need, if we want to make the formulae machine-readable is a parser that 
     \   /
       +
 
+```mermaid
+graph TD
+    A["+"] 
+    B["2"]
+    C["*"]
+    D["4"]
+    E["3"]
+
+    A --> B
+    A --> C
+    C --> D
+    C --> E
+```
+
     49 : (8 - 1)
      |    \   /
      |      -

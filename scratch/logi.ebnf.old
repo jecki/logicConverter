@@ -1,0 +1,139 @@
+# logi-grammar
+
+#######################################################################
+#
+#  EBNF-Directives
+#
+#######################################################################
+
+# Regular expression for implicit whitespace or one of: horizontal, linefeed, vertical
+# Implicit whitespace is denoted by the tilde-character: ~
+@ whitespace  = linefeed
+
+# Implicit whitespace adjacent to literals: left, right, both, none
+# E.g. if @literalws = right then ")" means the same as `)`~
+@ literalws   = right
+
+# Regular expression for comments, e.g. /#.*(?:\n|$)/
+# Use: /(?:\/\/.*)|(?:\/\*(?:.|\n)*?\*\/)/ for C++-style comments: /* ... */ or // to EOL
+@ comment     = /;.*?(?:\n|$)/
+
+# Case-sensitivity: True, False
+@ ignorecase  = False
+
+# Tree-simplification while parsing:  none, flatten, merge_treetops, merge
+@ reduction   = merge         # anonymous nodes are being merged where possible
+
+# Tags that may be replaced with their content while parsing
+@ disposable  = _EOF, _cdot
+
+# Tags that will be dropped with all their content while parsing or any of
+# the special values: strings, backticked, whitespace, regexps
+# Here, EOF and insignificant whitespace (tilde) will be dropped
+@ drop        = whitespace, strings, _EOF, _cdot
+
+
+#######################################################################
+#
+#:  Structure and Components
+#
+#######################################################################
+
+principia       = ~ { numbering assertion } EOF
+  numbering     = "*" chapter _cdot number ~
+
+assertion       = definition | axiom | theorem
+
+definition      = formula "Df"
+axiom           = _assertion_sign [dots] formula "Pp"
+theorem         = _assertion_sign [dots] formula
+
+
+#######################################################################
+#
+#:  Formulae
+#
+#######################################################################
+
+formula         = formula4 | formula3 | formula2 | formula1 | formula0
+  formula4        = and4 _d4 operator (_d4 and4 | _d3 and3 | _d2 and2 | _d1 and1 | formula0 | element)
+                  | (and4 _d4 | and3 _d3 | and2 _d2 | and1 _d1 | formula0 | element) operator _d4 and4
+  formula3        = and3 _d3 operator (_d3 and3 | _d2 and2 | _d1 and1 | formula0 | element)
+                  | (and3 _d3 | and2 _d2 | and1 _d1 | formula0 | element) operator _d3 and3
+  formula1        = and2 _d2 operator (_d2 and2 | _d1 and1 | formula0 | element)
+                  | (and2 _d2 | and1 _d1 | formula0 | element) operator _d2 and2
+  formula1        = and1 _d1 operator (_d1 and1 | formula0 | element)
+                  | (and1 _d1 | formula0 | element) operator _d1 and1
+  formula0        =  element operator element | element
+
+and             = and4 | and3 | and2 | and1
+  and4            = formula3 _a4 formula3 | formula3 | element
+  and3            = formula2 _a3 formula2 | formula2 | element
+  and2            = formula1 _a2 formula1 | formula1 | element
+  and1            = formula0 _a1 formula0 | formula0 | element
+
+element           = for_all | exists | group | predication | proposition
+                  | function | variable | restricted_var | constant
+
+for_all           = `(` variable `)` [_d1] element  # TODO: unsimplify this!
+exists            = `(` _exists_sign variable `)` [_d1] element  # TODO: unsiplify this!
+group             = `(` formula `)` | `{` formula `}`
+predication       = relation `(` individual {"," individual } `)`
+                  | individual relation individual
+function          = function_name (individual | circumflected)  # TODO: unsiplify this!
+restricted_var    = circumflected function
+
+individual        = variable | constant
+
+
+#######################################################################
+#
+#:  Atomic Expressions
+#
+#######################################################################
+
+chapter         = _nat_number
+number          = _nat_number
+
+propsition      = /[pqrstu]/        # propositional variable
+variable        = /[xyz]/           # individual variable
+circumflected   = /[x̂ŷẑ]/ | /^[xyz]/ # circonflexed variable
+constant        = /[abcde]/         # individual constant
+function_name   = /[fghϕψχ]/        # higher order variable
+relation        = /[QRST]/          # relaction or predication
+
+
+#######################################################################
+#
+#:  Disposables
+#
+#######################################################################
+
+_dots           = _d4 | _d3 | _d2 | _d1
+  _d1           = `.` &logical_sign | <-&reverse_logical_sign `.`
+  _d2           = `:` &logical_sign | <-&reverse_logical_sign `:`
+  _d3           = (`:.` | `.:`) &logical_sign | <-&reverse_logical_sign (`:.` | `.:`)
+  _d4           = `::` &logical_sign | <-&reverse_logical_sign `::`
+
+_nat_number     = /[1-9]\d*/
+_cdot           = `·` | `.` &_nat_number
+
+_exists_sign    = `∃` | `€`
+_unique_sign    = `E`
+
+_assertion_sign = `⊢` | `|-`
+_or             = `∨` | `v`
+_ifthen         = `⊃` | `->'
+_not            = `∼` | `~`
+_ifonlyif       = `≡` | `<->`
+
+_and            = _a4 | _a3 | _a2 | _a1
+  _a1           = `.`
+  _a2           = `:`
+  _a3           = `.:` | `:.`
+  _a4           = `::`
+
+_logical_sign         = /[⊢∨⊃∼~≡]|[|]-|->|<->/
+_reverse_logical_sign = /[⊢∨⊃∼~≡]|-[|]|>-|<->/
+
+_EOF            = !/./          # no more characters ahead, end of file
