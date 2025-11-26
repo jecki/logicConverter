@@ -45,10 +45,10 @@ What we need, if we want to make the formulae machine-readable is a parser that 
       +
 
 ```mermaid
-graph BT
+graph TD
     two["2"] --> plus["+"]
     four["4"] --> times["*"]
-    three["3"] --> time["*"]
+    three["3"] --> times["*"]
     times["*"] --> plus["+"]
 ```
 
