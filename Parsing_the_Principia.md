@@ -46,16 +46,16 @@ What we need, if we want to make the formulae machine-readable is a parser that 
 
 ```mermaid
 graph TD
-    A["+"] 
-    B["2"]
-    C["*"]
-    D["4"]
-    E["3"]
+    D["2"] --> B["+"]
 
-    A --> B
-    A --> C
-    C --> D
-    C --> E
+    E["4"] --> C["*"]
+
+    F["3"] --> C["*"]
+
+    C["*"] --> B["+"]
+
+    %% Arrange numbers on one line
+    D --- E --- F
 ```
 
     49 : (8 - 1)
