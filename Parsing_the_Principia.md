@@ -157,9 +157,11 @@ There are different variants of EBNF, but usually they only differ with respect 
 
 The basic elements that EBNF consists of are:
 
-1. **Atomic items** (or "terminals"): These are in the simple most case strings of characters enclosed in quotation marks, e.g. `"1"` or `"abc"` or character classes, e.g. `/[0-9]/` for all digits from 0 to 9 or full fledged regular expressions enclose by forward slashes, e.g. `/\d+/` for a sequence of digits.
+1. **Atomic items** (or "terminals"): These are in the simple most case strings of characters enclosed in quotation marks, e.g. `"1"` or `"abc"` or character classes, e.g. `/[0-9]/` for all digits from 0 to 9 or full fledged regular expressions enclosed by forward slashes, e.g. `/\d+/` for a sequence of digits. ("[Regular expressions](https://www.regular-expressions.info/tutorial.html)" are are comparatively less powerful formalism than EBNF for describing structural features of a piece of text. They are mainly used as a means for fast but versatile text searches ot for extracting information from texts.)
 
     A special atomic item is the tilde sign ~ for optional insignificant whitespace that may safely be ignored, so that the formulae 2+4*3 and 2 + 4 * 3 are really the same formulae although the sequence of characters that make up the formula is not the same and almost twice the size in the latter case.
+
+    *There are parsers or parser-generators for that matter that assume that the atomic items are drawn from a fixed set of tokens which are produced by a so-called "scanner" which is run over a text document before th parser. Here, we assume, a "scanner-less" parser that directly operates on a text in unicode-format. The regular expressions as atomic items do the work that would otherwise be delegated to a scanner. Scanner-less parsers have the advantage that they make it easier to mix different formal notations in one and the same document.*
 
 2. **Sequences** of items that follow each other. For example, `"number" ~ /[0-9]/` is the text "number" followed by zero or more whitespace characters, followed by a digit.
 
@@ -173,6 +175,16 @@ The basic elements that EBNF consists of are:
 
     The symbols on the left hand side will reappear in the syntax tree aus node-names. For example, the trivial grammar `addition = number "+" number` if applied to the formula "5+6" yields the syntax tree: (addition (number "5") (number "6")). 
 
-An EBNF-grammar is simply a sequence 
+An EBNF-grammar is simply a sequence of definitions that is usually ordered top-down from the most comprehensive symbol, typically a symbol for the entire document, to the more particular symbols of the document-parts. Here is a trivial example...
+
+
 
 ### A grammar for arithmetic formulae
+
+
+
+TODO: Limitations of EBNF: 
+   - Only context free languages
+   - Treats texts as streams of characters, ignores the 2-dimensional structure of a text document
+   - EBNF-Grammers have to "programmed" rather than simply be specified (e.g. precedence of operators) 
+
