@@ -185,7 +185,7 @@ An EBNF grammar is simply a sequence of definitions that is usually ordered top-
 	211 + 32
 	0 + 4
 
-Now, what could a grammar for this trivial form look like:
+Now, what could a grammar for this trivial form look like? Here is a suggestion:
 
 	sums   = sum { lf sum }
 	sum    = ws number ws "+" ws number ws
@@ -204,11 +204,11 @@ However, a grammar does not determine the syntax-tree of a language unambiguousl
 We will not delve into this topic deeper, here. Instead, we will next construct a grammar for a less trivial case, namely, that of arithmetic formulae with all four basic arithmetic operations and of arbitrary size and complexity.
 
 
-### Setting up a development environment for EBNF grammars
-
-Now, before we can start to write down the grammar for our arithmetic formulae, we need to set up a development environment for EBNF grammars. The easiest way to do so is to use the [DHParser](https://gitlab.lrz.de/badw-it/DHParser) tool.
-
 ### A grammar for arithmetic formulae
+
+Writing grammars without putting it to the test is like learning to swim on the dry land. So, before we start to write down the grammar for our arithmetic formulae, we will set up a development environment for EBNF grammars that allows us to match documents containing arithmetic formulae against our grammar. The easiest way to do so is to install the [DHParser](https://gitlab.lrz.de/badw-it/DHParser) framework. This has to be done in two steps. First you need to install [python](https://www.python.org): Head over to the [python website](https://www.python.org) and download the latest version for your operating system. Then, in order to install the DHParser framework, open a terminal and type: `pip install dhparser`. In case you receive a complaint about the "pip" package missing, you should try to run `python -m ensurepip`, first.
+
+Next, we will create a working directory for our grammar-experiment and either change to this directory or open a terminal in this directory. As this is operating-systemy specific I will not describe it here.
 
 
 
