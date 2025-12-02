@@ -206,9 +206,11 @@ We will not delve into this topic deeper, here. Instead, we will next construct 
 
 ### A grammar for arithmetic formulae
 
-Writing grammars without putting it to the test is like learning to swim on the dry land. So, before we start to write down the grammar for our arithmetic formulae, we will set up a development environment for EBNF grammars that allows us to match documents containing arithmetic formulae against our grammar. The easiest way to do so is to install the [DHParser](https://gitlab.lrz.de/badw-it/DHParser) framework. This has to be done in two steps. First you need to install [python](https://www.python.org): Head over to the [python website](https://www.python.org) and download the latest version for your operating system. Then, in order to install the DHParser framework, open a terminal and type: `pip install dhparser`. In case you receive a complaint about the "pip" package missing, you should try to run `python -m ensurepip`, first.
+Writing a grammar without putting it to the test is like learning to swim on the dry land. So, before we start to write down the grammar for our arithmetic formulae, we will set up a development environment for EBNF grammars that allows us to match documents containing arithmetic formulae against our grammar and, thus, to test whether our grammar really defines the notation we had in mind. The easiest way to do so is to install the [DHParser](https://gitlab.lrz.de/badw-it/DHParser) framework. This has to be done in two steps. First, you need to install [python](https://www.python.org): Head over to the [python website](https://www.python.org) and download the latest version for your operating system. Then, in order to install the DHParser framework, open a terminal and type: `pip install dhparser`. In case you receive a complaint about the "pip" package missing, you should try to run `python -m ensurepip`, first.
 
-Next, we will create a working directory for our grammar-experiment and either change to this directory or open a terminal in this directory. As this is operating-systemy specific I will not describe it here.
+Next, we will create a working directory for our grammar-experiment and either change to this directory or open a terminal in this directory. As this is operating-system-specific I will not describe it here. (And if you do not know how create a directory or open a terminal, or change the working directory from a terminal, you really should learn these things first, or else you won't have much fun following this tutorial.)
+
+Now, we will create a file called `arithmetic.ebnf` in the working directory and write down the grammar for our arithmetic formulae piece by piece. 
 
 
 
