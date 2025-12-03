@@ -167,7 +167,7 @@ The basic elements that EBNF consists of are:
 
 3. **Alternatives** which are denoted by a vertical dash `|` between two items, e.g. `"a" | "A"`. Following the convention of "parsing expression grammars" the dash means the first alternative or, if that does not match the following text, then the second alternative. It does not mean the first *or* the second alternative or *both* as it is understood by some parsers. So, the dash is not symmetric.
 
-    Also note, that sequences bind stronger than alternatives. So `"a" "b" | "c"` means the sequence "ab" or the letter "c".
+    Also, please, note that sequences bind stronger than alternatives. So `"a" "b" | "c"` means the sequence "ab" or the letter "c".
 
 4. **Grouping items** Ordinary parentheses `(` and `)` are used to group items. This becomes important when you want to break the order of precedence (e.g. sequences binding stronger than alternatives). For example, in order to express "a" followed by "b" or "c" you can use parentheses, e.g. `"a" ("b" | "c")`.
 
@@ -216,7 +216,7 @@ Now, we will create a file called `arithmetic.ebnf` in the working directory and
 
 
 TODO: Limitations of EBNF: 
-   - Only context free languages
+   - Only context-free languages
    - Treats texts as streams of characters, ignores the 2-dimensional structure of a text document
-   - EBNF-Grammers have to "programmed" rather than simply be specified (e.g. precedence of operators) 
+   - EBNF-Grammers have to be "programmed" rather than simply be specified (e.g. precedence of operators) 
 
