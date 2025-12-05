@@ -144,7 +144,7 @@ In the kind of S-expressions that are used, here, an S-expression is always encl
 
 Please observe that the only data type that occurs in a syntax tree is a text-string. This does not mean that further types could be introduced if the syntax tree is transformed into some kind of "document object model".
 
-There are, of course, manyy other alternatives to representing tree structural serially in text-form. In the web-development world and for Javascript/TypedScript-based projects the (JSON)[https://www.json.org/json-en.html]-based [unist](https://github.com/syntax-tree/unist) might be a good alternative. However, they are a bit less (human-)readable than S-expressions, so we will stick to those. 
+There are, of course, many other alternatives to representing tree-structures serially in text-form. In the web-development world and for JavaScript/TypedScript-based projects the (JSON)[https://www.json.org/json-en.html]-based [unist](https://github.com/syntax-tree/unist) might be a good alternative. However, they are a bit less (human-)readable than S-expressions, so we will stick to S-expressions. 
 
 
 ### EBNF: A meta-language for formal notations
@@ -197,7 +197,7 @@ Note that `\n` stands for linefeed and that `/\n/` is a regular expression that 
 
 Here is a little exercise: Can you change the definition of the symbol `ws` in such a way that it is not inherently optional, anymore and then adjust the places where whitespace is used so that the "meaning" of the grammar will not change, i.e. the same documents will be valid or invalid according to the grammar as before. Incidentally, this also shows that one and the same language (understood as the set of valid texts in this language) can be described by different grammars.
 
-Let's pause for a moment and reflect about what we have achieved by writing down the grammar for a formal language. First of all, the grammar allows us to decide which text-strings are valid according to the grammar or, to put it differently, a grammar allows deciding the syntactic correctness of statements in a formal language and in this sense defines the syntax of a formal language. Secondly, a grammar allows us to communicate the syntactic structure of a formal language in a concise way. And thirdly, as we will see below, a grammar allows us to automatically generate a parser from the grammar.
+Let's pause for a moment and reflect on what we have achieved by writing down the grammar for a formal language. First of all, the grammar allows us to decide which text-strings are valid according to the grammar or, to put it differently, a grammar allows deciding the syntactic correctness of statements in a formal language and in this sense defines the syntax of a formal language. Secondly, a grammar allows us to communicate the syntactic structure of a formal language in a concise way. And thirdly, as we will see below, a grammar allows us to automatically generate a parser from the grammar.
 
 However, a grammar does not determine the syntax-tree of a language unambiguously. While it is true that one and the same grammar always yields one and the same syntax tree for the same valid document in a formal language, the just noted fact that different grammars can describe one and the same language implies that a grammar does not determine the structure of the syntax trees of a language completely. Also, grammars do not say anything about the *meaning* of the statements in a formal language. Formal grammars are about syntax, not semantics. 
 
@@ -208,9 +208,15 @@ We will not delve into this topic deeper, here. Instead, we will next construct 
 
 Writing a grammar without putting it to the test is like learning to swim on the dry land. So, before we start to write down the grammar for our arithmetic formulae, we will set up a development environment for EBNF grammars that allows us to match documents containing arithmetic formulae against our grammar and, thus, to test whether our grammar really defines the notation we had in mind. The easiest way to do so is to install the [DHParser](https://gitlab.lrz.de/badw-it/DHParser) framework. This has to be done in two steps. First, you need to install [python](https://www.python.org): Head over to the [python website](https://www.python.org) and download the latest version for your operating system. Then, in order to install the DHParser framework, open a terminal and type: `pip install dhparser`. In case you receive a complaint about the "pip" package missing, you should try to run `python -m ensurepip`, first.
 
-Next, we will create a working directory for our grammar-experiment and either change to this directory or open a terminal in this directory. As this is operating-system-specific I will not describe it here. (And if you do not know how create a directory or open a terminal, or change the working directory from a terminal, you really should learn these things first, or else you won't have much fun following this tutorial.)
+Next, we will create a working directory for our grammar-experiment and either change to this directory or open a terminal in this directory. As this is operating system specific I will not describe it here. (And if you do not know how create a directory or open a terminal, or change the working directory from a terminal, you really should learn these things first, or else you won't have much fun following this tutorial.)
 
-Now, we will create a file called `arithmetic.ebnf` in the working directory and write down the grammar for our arithmetic formulae piece by piece. 
+Now, we will create a file called `arithmetic.ebnf` in the working directory and write down the grammar for our arithmetic formulae piece by piece. Let's, for the sake of simplicity, confine ourselves to simple arithmetic formulae with only the four basic arithmetic operations applied to numbers, but of arbitrary size and complexity. Here is the first attempt at a grammar for a single(!) arithmetic formula. If you intend to follow along, please copy this grammar into a file `arithmetic1.ebnf` in your working directory::
+
+    expression = ~ term  { ("+" | "-" | "*" | ":") term } ~
+    term       = number | group
+    group      = "(" expression ")"
+    number     = /[0]/ | /[1-9]/ { /[0-9]/ }
+
 
 
 
