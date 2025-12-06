@@ -210,7 +210,7 @@ Writing a grammar without putting it to the test is like learning to swim on the
 
 Next, we will create a working directory for our grammar-experiment and either change to this directory or open a terminal in this directory. As this is operating system specific I will not describe it here. (And if you do not know how create a directory or open a terminal, or change the working directory from a terminal, you really should learn these things first, or else you won't have much fun following this tutorial.)
 
-Now, we will create a file called `arithmetic.ebnf` in the working directory and write down the grammar for our arithmetic formulae piece by piece. Let's, for the sake of simplicity, confine ourselves to simple arithmetic formulae with only the four basic arithmetic operations applied to numbers, but of arbitrary size and complexity. Here is the first attempt at a grammar for a single(!) arithmetic formula. If you intend to follow along, please copy this grammar into a file `arithmetic1.ebnf` in your working directory::
+Now, we will create a file called `arithmetic.ebnf` in the working directory and write down the grammar for our arithmetic formulae piece by piece. Let's, for the sake of simplicity, confine ourselves to simple arithmetic formulae with only the four basic arithmetic operations applied to numbers, but of arbitrary size and complexity. Here is the first and rather naive attempt at a grammar for a single(!) arithmetic formula. If you intend to follow along, please copy this grammar into a file `arithmetic1.ebnf` in your working directory::
 
     expression = ~ term  { ("+" | "-" | "*" | ":") term } ~
     term       = number | group
