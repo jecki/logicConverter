@@ -239,9 +239,7 @@ There are two reasons for this: First of all, what an automatically generated pa
     # python arithmetic1Parser.py -p "2++4*3"
     1:3: Error (1040): Parser "formulae" stopped before end, at: »+4*3« Terminating parser.
 
-While the error message may not be very informative with respect to the nature of the error, it does at least tell us that the parser failed to match the formula and, in this case, it also locates the error correctly. 
-
-But what can we do about the syntax tree the parser produces? There are two stratigies that we can use to improve the syntax tree: 
+While the error message may not be very informative with respect to the nature of the error, it does at least tell us that the parser failed to match the formula and, in this case, it also locates the error correctly. But what can we do about the syntax tree the parser produces? There are two strategies that we can use to improve the syntax tree: 
 
     1. We can rewrite our grammar so that it better reflects the semantic structure of our target domain.
 
