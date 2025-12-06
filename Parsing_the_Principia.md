@@ -217,7 +217,37 @@ Now, we will create a file called `arithmetic.ebnf` in the working directory and
     group      = "(" expression ")"
     number     = /[0]/ | /[1-9]/ { /[0-9]/ }
 
+In order to try out our grammar, we first need to generate a parser from the grammar. This can be done from the command line with the "dhparser" command, which should be available once you have installed DHParser. In the working directory, type: `dhparser arithmetic1.ebnf`. This will generate a parser called `arithmetic1Parser.py` in the working directory. Now, we can use this parser to parse arithmetic formulae. For example, we can parse the formula `2+4*3` with the following command: `python arithmetic1Parser.py --parse "2+4*3"`. This will print out the syntax tree of the formula as an S-expression:
 
+    # dhparser arithmetic1.ebnf
+    # python arithmetic1Parser.py --parse "2+4*3"
+    (formulae 
+      (expression 
+        (term 
+          (number "2")) 
+        (:Text "+") 
+        (term 
+          (number "4")) 
+        (:Text "*") 
+        (term 
+          (number "3"))))
+
+You might find that the syntax-tree is printed on a single line (which DHParser does with very short syntax-trees), if you have tried it yourself. For more clarity the S-expression has been broken down into multiple lines, here. Also, might be disappointed that the syntax-tree you see does not seem to have a lot in common with nice "Termgliederungs"-syntax-trees that we have sketched above. First of call it contains several Text-Tokens (nodes with the name ":Text", the colon indicating that these nodes are not directly attached to a symbol of the grammar) and then, even worse, its structure does not really reflect the semantic structure of the formular. For example, there is no indication that the multiplication operator must be evaluated before the addition operator.
+
+There are two reasons for this: First of all, what an automatically generated parser outputs is (usually) not already the abstract syntax-tree (AST) but rather the *concrete* syntax-tree (CST) that closely reflects the structure of our grammar but not necessarily the (intended) structure of our target data or domain, about which the parser does not have any knowledge other than the grammar we gave it. (So, how would the parser eben know that the multiplication operator must be evaluated before the addition operator?) Secondly, our naive grammar has not at all bean geared towards the semantic structure of our target domain, i.e. arithmetic formulae. Therefore, it is in this stage hardly suitable for little more than determining whether a formular is syntactically correct or not. You can verify the latter if you feed a syntactically incorrect formular to the parser, e.g.:
+
+    # python arithmetic1Parser.py -p "2++4*3"
+    1:3: Error (1040): Parser "formulae" stopped before end, at: »+4*3« Terminating parser.
+
+While the error message may not be very informative with respect to the nature of the error, it does at least tell us that the parser failed to match the formula and, in this case, it also locates the error correctly. 
+
+But what can we do about the syntax tree the parser produces? There are two stratigies that we can use to improve the syntax tree: 
+
+    1. We can rewrite our grammar so that it better reflects the semantic structure of our target domain.
+
+    2. We can reshape the syntax tree or, rather develop algorithms to reshape the concrete synatx-tree (CST) that the parser produces into an abstract syntax-tree (AST) for the target domain.
+
+In almost any "real-world" both strategies are used in combination. In this trivial example we could get by with reshaping the grammar. So let's start with rewriting out grammar:
 
 
 
