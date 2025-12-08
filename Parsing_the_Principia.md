@@ -189,7 +189,7 @@ Now, what could a grammar for this trivial form look like? Here is a suggestion:
 
 	sums   = sum { lf sum }
 	sum    = ws number ws "+" ws number ws
-	number = [ "-" ] /[1-9]/ { /[0-9]/ } | "0"
+	number = /[1-9]/ { /[0-9]/ } | "0"
 	ws     = { " " }
 	lf     = /\n/
 
@@ -212,10 +212,13 @@ Next, we will create a working directory for our grammar-experiment and either c
 
 Now, we will create a file called `arithmetic.ebnf` in the working directory and write down the grammar for our arithmetic formulae piece by piece. Let's, for the sake of simplicity, confine ourselves to simple arithmetic formulae with only the four basic arithmetic operations applied to numbers, but of arbitrary size and complexity. Here is the first and rather naive attempt at a grammar for a single(!) arithmetic formula. If you intend to follow along, please copy this grammar into a file `arithmetic1.ebnf` in your working directory::
 
-    expression = ~ term  { ("+" | "-" | "*" | ":") term } ~
+    formulae   = ~ expression { ~ expression } ~
+    expression = term  { ("+" | "-" | "*" | ":") term }
     term       = number | group
     group      = "(" expression ")"
     number     = /[0]/ | /[1-9]/ { /[0-9]/ }
+
+The tilde sign "~" in the first line of the grammar is new: It stands for optional insignificant whitespace and is by default defined by the regular expression `/\s*/` which matches any number of whitespace characters both horizontal (e.g. spaces, tabs) and vertical (e.g. line feeds, carriage returns). It is used here to make the grammar more readable. Also, since the tilde sign also captures linefeeds (`\n`), we do not need to define a separate symbol for line feeds in the grammar as we did in the example, before. We will learn more about the (in-)significant whitespace in due time. 
 
 In order to try out our grammar, we first need to generate a parser from the grammar. This can be done from the command line with the "dhparser" command, which should be available once you have installed DHParser. In the working directory, type: `dhparser arithmetic1.ebnf`. This will generate a parser called `arithmetic1Parser.py` in the working directory. Now, we can use this parser to parse arithmetic formulae. For example, we can parse the formula `2+4*3` with the following command: `python arithmetic1Parser.py --parse "2+4*3"`. This will print out the syntax tree of the formula as an S-expression:
 
@@ -245,7 +248,8 @@ While the error message may not be very informative with respect to the nature o
 
     2. We can reshape the syntax tree or, rather develop algorithms to reshape the concrete synatx-tree (CST) that the parser produces into an abstract syntax-tree (AST) for the target domain.
 
-In almost any "real-world" both strategies are used in combination. In this trivial example we could get by with reshaping the grammar. So let's start with rewriting out grammar:
+In almost any "real-world"-application both strategies are used in combination. In this trivial example we can get by with reshaping the grammar, alone. So let's start with rewriting our grammar:
+
 
 
 
