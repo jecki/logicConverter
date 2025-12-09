@@ -1,7 +1,7 @@
 Parsing the Principia
 =====================
 
-*An introduction to coding EBNF-grammars and building parsers for logical formulae.*
+*An introduction to coding EBNF grammars and building parsers for logical formulae.*
 
 
 Introduction
@@ -175,7 +175,7 @@ The basic elements that EBNF consists of are:
 
 6. **Repeated items** are written in curly brackets `{ ... }`. For example, a "positive or negative number" could be written as: `[ "-" ] /[1-9]/ { /[0-9]/ }`. Note that the curly braces mean "zero or more repetitions", so in the just given example, "-2" would be matched just as `-255`.
 
-7. Finally, **definitions** (for historical reasons also often called "production rules") assign an expression to a **symbol**, e.g. `number =  [ "-" ] /[1-9]/ { /[0-9]/ } | "0"`. The `=`-sign is here called the "assignment sign". It is possible to refer to symbols in other productions rules, simply by putting them somewhere on the right-hand side of the assignment operator, e.g. `addition = number "+" number`
+7. Finally, **definitions** or (production) **rules** (as they have traditionally been called) assign an expression to a **symbol**, e.g. `number =  [ "-" ] /[1-9]/ { /[0-9]/ } | "0"`. The `=`-sign is here called the "assignment sign". It is possible to refer to symbols in other productions rules, simply by putting them somewhere on the right-hand side of the assignment operator, e.g. `addition = number "+" number`
 
     The symbols on the left-hand side will reappear in the syntax tree as node-names. For example, the trivial grammar `addition = number "+" number` if applied to the formula "5+6" yields the syntax tree: (addition (number "5") (number "6")). 
 
@@ -248,9 +248,107 @@ While the error message may not be very informative with respect to the nature o
 
     2. We can reshape the syntax tree or, rather develop algorithms to reshape the concrete synatx-tree (CST) that the parser produces into an abstract syntax-tree (AST) for the target domain.
 
-In almost any "real-world"-application both strategies are used in combination. In this trivial example we can get by with reshaping the grammar, alone. So let's start with rewriting our grammar:
+In almost any "real-world"-application both strategies are used in combination. In this trivial example we can get by with reshaping the grammar, alone. So let's start with rewriting our grammar. This grammar can be stored in a file which we may call "arithmetic2.ebnf":
 
+    formulae   = ~ expression { ~ expression } ~
+    expression = term  { ("+" | "-" ) term }
+    term       = factor { ("*" | ":" ) factor }
+    factor     = number | group
+    group      = "(" expression ")"
+    number     = /0/ | /[1-9]/ { /[0-9]/ }
 
+The main difference to our first grammar is that the definition of expression from the earlier grammar has been split into two parts, a definition "term" which serves as the definition for multiplication and division and the definition of "expression" which has been rewritten so that it only captures addition and substraction. Node, that an expression can - as a special case - also be a single term and a term can in turn also only consist of a single factor, which, then again, implies that an expression can, as the case may be, consist of a single factory, only. Let's have a look at this, before we parse our tried and tested formula again::
+
+    # dhparser arithmetic2.ebnf
+    # python arithmetic2Parser.py --parse "2"
+    (formulae 
+      (expression 
+        (term 
+          (factor 
+            (number "2")))))
+
+If this appears too verbose (after all `(formular (expression (number "2")))` or even `(formualar (number "2")))` might be enough to capture the meaning of the formula), keep in mind that what a parser yields is a concrete syntax-tree that closely refelects the working mechanism of the parser or, if the parser was generated from a formal grammar, the structure of that grammar. you might as an exercise think about a suitable transformation rule to make the syntax-tree more compact (without losing any relevant information!) However, to demonstrate that according to our grammar, an expression may really just consist of a single term which consists of a single factor, this example may suffice. Now, let's parse our original formula "2 + 4 \* 3" again::
+
+    # python arithmetic2Parser.py --parse "2+4*3"
+    (formulae
+      (expression
+        (term
+          (factor
+            (number "2")))
+        (:Text "+")
+        (term
+          (factor
+            (number "4"))
+          (:Text "*")
+          (factor
+            (number "3")))))
+
+If you compare this to the syntax-tree from above, you will notice an additional level of nesting that encapsulates the term "4 \* 3". If the tree is evaluated inside out, the term "4\*3" is evaluated first, as it should be, even though this deviates from the order in which we read the formula, i.e. from the left to right. Still, our syntax-tree is not as elegant as it could be. It still contains tokens like "+" and "\*" and, while it now honors the precedence of "*" and ":" over "+" and "-", it does nowhere reflect the rule of associativity, e.g. 5 - 2 - 1 equals (5 - 2) - 1 = 2, but not 5 - (2 - 1) = 4. This can easily be verified:
+
+    # python arithmetic2Parser.py -p "5-2-1"
+    (formulae
+      (expression
+        (term
+          (factor
+            (number "5")))
+        (:Text "-")
+        (term
+          (factor
+            (number "2")))
+        (:Text "-")
+        (term
+          (factor
+            (number "1")))))
+
+Of course, if we evaluate the tree from the left to the right or from top to bottom for that matter, we would get the rule of associativity right. But what if it weren't plus and minus but the power to operator "^" which must be evaluated from right to left? As mentioned earlier, we could also reshape the tree after parsing so that its structure reflects the left-associativity of addition and subtraction. (Can you think of an algorithm that accomplishes this? And what would the tree then look like?) But, arguably, it is more elegant to write a grammar that yields the proper tree-structure for our target-domain right away. So, let's try a little harder and rewrite our grammar as follows:
+
+    formulae = ~ expression { expression }
+    
+    expression = addition | subtraction | term
+      addition    = expression "+"~ term
+      subtraction = expression "-"~ term
+    
+    term       = multiplication | division | factor
+      multiplication = term "*"~ factor
+      division       = term ":"~ factor
+    
+    factor = group | number
+      group  = "("~ expression ")"~
+      number = /0/~ | /[1-9]/ { /[0-9]/ } ~
+
+A few things have changed: There is a single definition for each one of the four basic arithmetic operations. The relatively more abstract rules "expression" and "term" still exist, only now they are defined as collective terms ("Sammelbegriffe") for either an addition or a subtraction or a single term in the first case or a multiplication or a division or a single factor in the second case. Although the number of definitions in our grammar has increased, you might find that now they have become somewhat clearer as, for example, from the definition of expression it becomes clear right away that an expression can be an addition or a subtraction or just a single term. Also, each semantically different category, e.g. addition vs. subtraction and multiplication vs. division has been honored with a definition of its own. We will soon see how beneficial both of these changes are also for producing semantically rich syntax-trees.
+
+As before, the definitions for multiplication and division are nested inside the definitions for addition and subtraction - only this time the nesting is indirect through the collective term "term". Also, the definitions for addition, subtraction, mulitplication and division now capture the left-associativity of these arithmetic operation (which might be a little hard to see until we actually make the experiment, below). 
+
+Finally, you might have noticed that in this version of the grammar, we have made liberal use of the tilde sign "~" which instructs the parser to "eat" (insignificant) whitespace. The purpose is to allow as to add whitespace to the left and right of each token as we please to render the formulae more readable. Now, you might wonder why, if we want to allow whitespace to the left *and* right of each token, the tile-sign in the grammar only appears on the right-hand side? Well, if you look closely, it also appears on the left-hand side, but only once at the very beginning in the definition of our topmost symbol "fomulae"! This is how the trick works: We add the whitespace-marke once on the left-hand side as the very first item of our grammar and then on the right-hand side of every atomic item (e.g. token-string-literal or regular expression) that occurs in the grammar. Because save for the first atomic item every string or regular expression follows some other string or regular expression, the whitespace on the right-hand side of the previous atomic item is automatically also the whitespace on the left-hand side of the next atomic item. We could also have done it the other way round and added the tilde sign once on the right-hand side at the very end of the first definition and then on the left-hand side of every atomic item. 
+
+It is, of course, not forbidden, to add the whitespace sign on both sides of every atomic item of the grammar, but this would only increase visual noise and actually make the parser a little slower.
+
+Let's have a look at the syntax-tree for the formula "2 + 4 \* 3" again, first::
+
+    # python arithmetic3Parser.py -p "2 + 4 * 3"
+    (formulae
+      (expression
+        (addition
+          (expression
+            (term
+              (factor
+                (number
+                  (:RegExp "2")
+                  (:Whitespace " ")))))
+          (:Text "+")
+          (:Whitespace " ")
+          (term
+            (multiplication
+              (term
+                (factor
+                  (number
+                    (:RegExp "4")
+                    (:Whitespace " "))))
+              (:Text "*")
+              (:Whitespace " ")
+              (factor
+                (number "3")))))))
 
 
 TODO: Limitations of EBNF: 
