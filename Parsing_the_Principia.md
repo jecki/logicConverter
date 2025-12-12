@@ -366,8 +366,8 @@ The "@hide"-directive in the second line instructs the parser to replace the nod
 
 The most important difference between the ”@drop"- and the "@hide"-directive is that the former drops the node *and* its content, whereas the latter only removes intermediary nodes but retains the content. The resulting syntax-tree is much more compact and also more readable:
 
-    # dhparser arithmetic3.ebnf
-    # python arithmetic3Parser.py --parse "2 + 4 * 3"
+    # dhparser arithmetic4.ebnf
+    # python arithmetic4Parser.py --parse "2 + 4 * 3"
     (formulae 
       (addition 
         (number "2") 
@@ -390,8 +390,44 @@ Now, you might wonder if such crude tree-trimming rules as "delete all nodes ste
 
 You can easily check that all these precepts have been observed in the last version of the grammar which allowed us to drastically streamline the resulting syntax-tree by adding a few "crude" rules in form of directives at the top. Now, there is one last rule that, however, instead of trimming the tree, simplifies writing the grammar by reducing visual noise. You might have noticed that after ever string literal the tilde sign `~` for insignificant whitespace follows. Specifically, for string-literals DHParser allows adding the directive `@literalws = right` which instructs DHParser when generating a parser from a grammar to assume insignificant whitespace on the right-hand side of every string-literal. Thus, our fully streamlined grammar reads:
 
+      @literalws = right                  # silently eat whitespace to the right of any string literal
+      @drop = whitespace, strings         # drop insignificant whitespace and all string literals
+      @hide = expression, term, factor    # replace these by their (single) child
+      
+      formulae = ~ expression { expression }
+      
+      expression = addition | subtraction | term
+        addition    = expression "+" term
+        subtraction = expression "-" term
+      
+      term       = multiplication | division | factor
+        multiplication = term "*" factor
+        division       = term ":" factor
+      
+      factor = group | number
+        group  = "(" expression ")"
+        number = /0/~ | /[1-9]/ { /[0-9]/ } ~
+
+Before we round up our crash course with an exercise for ambitious readers, let's verify that a parser generated from this grammar also respects the law of associativity, e.g. a + b + c == (a + b) + c:
+
+    # python Arithmetic4Parser.py --parse "5 - 2 - 1"
+    (formulae 
+      (subtraction 
+        (subtraction 
+          (number "5") 
+          (number "2")) 
+        (number "1")))
+
+As we can see from the tree-structure, the parser reads the formula 5 - 2 - 1 correctly as (5 - 2 - 1). Can you guess, why? If not, consider this: You might have noticed that the rules for addition, subtraction, multiplication and division have been defined "left-recursively" in the grammar. What if you had defined them right-recursively? You can change the grammar and subsitute `addtion =  expression "+" term` by `addition = term "+" expression` and the same for all other basic arithmetic operations. Try it and see how this changes the shape of the syntax-tree. 
+
+Actually, not all parser generators even allow left-recursive grammars. Some parser-generators complain if presented with a left-recursive grammar, other do not complain but get caught up in an infinite loop when parsing. If you use a parser-generator of this kind, you'll have to make sure that the grammar is neither directly nor indirectly left-recursive and then reshapre the snytax-tree later. Luckily, any left-recursive grammar can be rewritten as a right-recursive grammar, ablbeit, not without affecting the shape of the syntax-trees produced by that grammar.
+
+Finally, there is the promised exercise: Extend the grammar, so that is also supports the "power to"-operation. Use the `^`-sign for "power to" so that "2^4" is to be understood as "2 to the power of 8". When extending the grammar, make sure that the power-operator `^` has a higher precedence than "*" and "/" and thus also than "+" and "-". Make also sure that you get the associativity of the power operator, which - contrary to that of the basic arithmetic operations - is right-associative, is reflected in the syntax tree. Before you set out to extend the grammar, you might think of test-cases (formulae) which allow you to verify this (Test-Driven-Development). 
+
+To really be sure that the parser is correct, you might want to look at the following section, which explains how to evaluate abstract-syntax-trees. For then, you do not even neet to look at the resulting syntax-trees any nor, but can easily check if, say, the syntax-tree of the formula "5 - 2 - 1" is evaluated as 2 which is correct and not as 4.
 
 
+### Evaluating the syntax-tree
 
 
 TODO: Limitations of EBNF: 
