@@ -354,7 +354,7 @@ Let's have a look at the syntax-tree for the formula "2 + 4 \* 3" again, first::
 As it is a bit difficult to read such a verbose syntax-tree, it is probably the right time to introduce a few simple techniques to streamline the output of the parser. In order to do so, we add the following two lines to the top of our grammar and save the changed grammar in a file called "arithmetic4.ebnf" in our working directory::
 
     @drop = whitespace, strings
-    @hide = expression, term, factor
+    @hide = expression, term, factor, group
 
 The first line contains a "directive" that instructs the parser to drop two classes of items entirely: 
 
@@ -392,7 +392,7 @@ You can easily check that all these precepts have been observed in the last vers
 
       @literalws = right                  # silently eat whitespace to the right of any string literal
       @drop = whitespace, strings         # drop insignificant whitespace and all string literals
-      @hide = expression, term, factor    # replace these by their (single) child
+      @hide = expression, term, factor, group # replace these by their (single) child
       
       formulae = ~ expression { expression }
       
@@ -410,7 +410,7 @@ You can easily check that all these precepts have been observed in the last vers
 
 Before we round up our crash course with an exercise for ambitious readers, let's verify that a parser generated from this grammar also respects the law of associativity, e.g. a + b + c == (a + b) + c:
 
-    # python Arithmetic4Parser.py --parse "5 - 2 - 1"
+    # python arithmetic4Parser.py --parse "5 - 2 - 1"
     (formulae 
       (subtraction 
         (subtraction 
@@ -426,8 +426,30 @@ Finally, there is the promised exercise: Extend the grammar, so that is also sup
 
 To really be sure that the parser is correct, you might want to look at the following section, which explains how to evaluate abstract-syntax-trees. For then, you do not even neet to look at the resulting syntax-trees any nor, but can easily check if, say, the syntax-tree of the formula "5 - 2 - 1" is evaluated as 2 which is correct and not as 4.
 
-
 ### Evaluating the syntax-tree
+
+What the *evaluation* of a syntax-tree means depends on the target domain (of course) and on the purpose. In the case of syntax-trees of arithmetic formulae, the most obvious purpose is calculating the numeric result of the formula. However, other purposes also make sense. For example, another kind of "evaluation" could consist in the re-serialization of the syntax-tree of an arithmetic calculation to a formula. Let's look at the calculation first. It's pretty straight forward if you know Python a little:
+
+   # python
+   >>> from operators import add, sub, mul, floordiv
+   >>> from arithmetic4Parser import compile_snippet
+   >>> syntax_tree, errors = compile_snippet("2 + 4 * 3")
+   >>> actions = {'addition': add, 
+   ...            'subtraction': sub, 
+   ...            'multiplication': mul, 
+   ...            'division': floordiv,
+   ...            'number': int, 
+   ...            'formulae': lambda *f: f }
+   >>> syntax_tree.evaluate(actions)
+   14
+   
+And this is what the code above does:
+
+* From the operators-module of Python's standard library the four basic arithmetic operations are imported as functions. (That is, because in Python you can assign functions to variables or dictionary values but not the arithmetic operators +,-,\*,/ directly!)
+* From the generated arithmetic4Parser module the function compile_snippet is imported. Note that arithmetic4Parser.py does not necessarily need to be called from the command line as before, it can also be imported from another Python module, in an interactive Python session or from a Pyhton script. The function compile_snippet(str) is also generated and does just that: parse and compile a piece of source text and return the result and a (hopefully empty) list of errors. As in our case the compilation consists only of the parsing stage and that returns a snytax-tree, the result is the root-node of that syntax-tree, which is an instance of DHParser's nodetree.Node class.
+* Next, the function "compile_snippet" is called with our well-known formula. In this example, we do not check if there are any errors.
+* Now comes the "heart" of the evaluation. We define an "actions"-dictionary. As you might have noticed, the keys of this dictionary are the node-names of our syntax-tree which in turn are the names of all those rules in our grammar that are not "hidden" during parsing. For each rule / node-name a function is stored that takes as arguments the results of the evaluation of its children or, in case it is a leaf-node without children, the string-content of that node.  
+
 
 
 TODO: Limitations of EBNF: 
