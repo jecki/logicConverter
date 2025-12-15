@@ -1,3 +1,5 @@
+# 1
+
 As it is a bit difficult to read such a verbose syntax-tree, it is probably the right time to introduce a few simple techniques to streamline the output of the parser. The present syntax-tree appears to be unnecessarily verbose in several respects. (Feel free to skip the following list for now, in case you are not particularly interested in the details of the high art of tree-trimming):
 
 1. The concrete syntax-tree faithfully records every character from the source text including the **whitespace** characters, which were only used to make the formula more readable. These are found in "anonymous" nodes named ":Whitespace". It might sound like a contradictio in adiecto than an anonymous node should have a name. It is anonymous in the sense that it does not bear the name of a particular rule in the grammar that generated this node, but only the class name for the kind of parser that generated the node precceded by a colon ":" which is the marker by which DHParser distinguishes "named" nodes from "anonymous" nodes. (If you till do not like the term "anynomous", you can also think of these nodes as going "incongnito" with resepct to the set of symbols defined in the grammar.) 
@@ -28,3 +30,26 @@ The directive `@drop = whitespace, strings` instructs DHParser to drop all nodes
 The directive `@hide = expression, term, factor` instructs DHParser to replace by a single child or reduce to its parent if a single child (whatever of these two is possible) any node with the name "expression", "term" or "factor". Essentially this directive instructs DHParser to tread nodes with these names just like anonymous nodes. Let's see how these two instructions lead to a greatly simplified syntax-tree:
 
     (formulae (subtraction (subtraction (number "5") (number "2")) (number "1")))
+
+
+# 2
+
+Now, there is one last rule that, however, instead of trimming the tree, simplifies writing the grammar by reducing visual noise. You might have noticed that after ever string literal the tilde sign `~` for insignificant whitespace follows. Specifically, for string-literals DHParser allows adding the directive `@literalws = right` which instructs DHParser when generating a parser from a grammar to assume insignificant whitespace on the right-hand side of every string-literal. Thus, our fully streamlined grammar reads:
+
+      @literalws = right                  # silently eat whitespace to the right of any string literal
+      @drop = whitespace, strings         # drop insignificant whitespace and all string literals
+      @hide = expression, term, factor, group # replace these by their (single) child
+      
+      formulae = ~ expression { expression }
+      
+      expression = addition | subtraction | term
+        addition    = expression "+" term
+        subtraction = expression "-" term
+      
+      term       = multiplication | division | factor
+        multiplication = term "*" factor
+        division       = term ":" factor
+      
+      factor = group | number
+        group  = "(" expression ")"
+        number = /0/~ | /[1-9]/ { /[0-9]/ } ~

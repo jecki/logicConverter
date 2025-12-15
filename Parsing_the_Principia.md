@@ -222,8 +222,8 @@ The tilde sign "~" in the first line of the grammar is new: It stands for option
 
 In order to try out our grammar, we first need to generate a parser from the grammar. This can be done from the command line with the "dhparser" command, which should be available once you have installed DHParser. In the working directory, type: `dhparser arithmetic1.ebnf`. This will generate a parser called `arithmetic1Parser.py` in the working directory. Now, we can use this parser to parse arithmetic formulae. For example, we can parse the formula `2+4*3` with the following command: `python arithmetic1Parser.py --parse "2+4*3"`. This will print out the syntax tree of the formula as an S-expression:
 
-    # dhparser arithmetic1.ebnf
-    # python arithmetic1Parser.py --parse "2+4*3"
+    $ dhparser arithmetic1.ebnf
+    $ python arithmetic1Parser.py --parse "2+4*3"
     (formulae 
       (expression 
         (term 
@@ -239,7 +239,7 @@ You might find that the syntax-tree is printed on a single line (which DHParser 
 
 There are two reasons for this: First of all, what an automatically generated parser outputs is (usually) not already the abstract syntax-tree (AST) but rather the *concrete* syntax-tree (CST) that closely reflects the structure of our grammar but not necessarily the (intended) structure of our target data or domain, about which the parser does not have any knowledge other than the grammar we gave it. (So, how would the parser eben know that the multiplication operator must be evaluated before the addition operator?) Secondly, our naive grammar has not at all bean geared towards the semantic structure of our target domain, i.e. arithmetic formulae. Therefore, it is in this stage hardly suitable for little more than determining whether a formular is syntactically correct or not. You can verify the latter if you feed a syntactically incorrect formular to the parser, e.g.:
 
-    # python arithmetic1Parser.py -p "2++4*3"
+    $ python arithmetic1Parser.py -p "2++4*3"
     1:3: Error (1040): Parser "formulae" stopped before end, at: »+4*3« Terminating parser.
 
 While the error message may not be very informative with respect to the nature of the error, it does at least tell us that the parser failed to match the formula and, in this case, it also locates the error correctly. But what can we do about the syntax tree the parser produces? There are two strategies that we can use to improve the syntax tree: 
@@ -259,8 +259,8 @@ In almost any "real-world"-application both strategies are used in combination. 
 
 The main difference to our first grammar is that the definition of expression from the earlier grammar has been split into two parts, a definition "term" which serves as the definition for multiplication and division and the definition of "expression" which has been rewritten so that it only captures addition and substraction. Node, that an expression can - as a special case - also be a single term and a term can in turn also only consist of a single factor, which, then again, implies that an expression can, as the case may be, consist of a single factory, only. Let's have a look at this, before we parse our tried and tested formula again::
 
-    # dhparser arithmetic2.ebnf
-    # python arithmetic2Parser.py --parse "2"
+    $ dhparser arithmetic2.ebnf
+    $ python arithmetic2Parser.py --parse "2"
     (formulae 
       (expression 
         (term 
@@ -269,7 +269,7 @@ The main difference to our first grammar is that the definition of expression fr
 
 If this appears too verbose (after all `(formular (expression (number "2")))` or even `(formualar (number "2")))` might be enough to capture the meaning of the formula), keep in mind that what a parser yields is a concrete syntax-tree that closely refelects the working mechanism of the parser or, if the parser was generated from a formal grammar, the structure of that grammar. You might as an exercise think about a suitable transformation rule to make the syntax-tree more compact (without losing any relevant information!) However, to demonstrate that according to our grammar, an expression may really just consist of a single term which consists of a single factor, this example may suffice. Now, let's parse our original formula "2 + 4 \* 3" again::
 
-    # python arithmetic2Parser.py --parse "2+4*3"
+    $ python arithmetic2Parser.py --parse "2+4*3"
     (formulae
       (expression
         (term
@@ -285,7 +285,7 @@ If this appears too verbose (after all `(formular (expression (number "2")))` or
 
 If you compare this to the syntax-tree from above, you will notice an additional level of nesting that encapsulates the term "4 \* 3". If the tree is evaluated inside out, the term "4\*3" is evaluated first, as it should be, even though this deviates from the order in which we read the formula, i.e. from the left to right. Still, our syntax-tree is not as elegant as it could be. It still contains tokens like "+" and "\*" and, while it now honors the precedence of "*" and ":" over "+" and "-", it does nowhere reflect the rule of associativity, e.g. 5 - 2 - 1 equals (5 - 2) - 1 = 2, but not 5 - (2 - 1) = 4. This can easily be verified:
 
-    # python arithmetic2Parser.py --parse "5-2-1"
+    $ python arithmetic2Parser.py --parse "5-2-1"
     (formulae
       (expression
         (term
@@ -326,8 +326,8 @@ It is, of course, not forbidden to add the whitespace sign on both sides of ever
 
 Let's have a look at the syntax-tree for the formula "2 + 4 \* 3" again, first::
 
-    # dhparser arithmetic3.ebnf
-    # python arithmetic3Parser.py --parse "2 + 4 * 3"
+    $ dhparser arithmetic3.ebnf
+    $ python arithmetic3Parser.py --parse "2 + 4 * 3"
     (formulae
       (expression
         (addition
@@ -366,8 +366,8 @@ The "@hide"-directive in the second line instructs the parser to replace the nod
 
 The most important difference between the ”@drop"- and the "@hide"-directive is that the former drops the node *and* its content, whereas the latter only removes intermediary nodes but retains the content. The resulting syntax-tree is much more compact and also more readable:
 
-    # dhparser arithmetic4.ebnf
-    # python arithmetic4Parser.py --parse "2 + 4 * 3"
+    $ dhparser arithmetic4.ebnf
+    $ python arithmetic4Parser.py --parse "2 + 4 * 3"
     (formulae 
       (addition 
         (number "2") 
@@ -388,29 +388,9 @@ Now, you might wonder if such crude tree-trimming rules as "delete all nodes ste
 
 3. Collective terms or summary concepts which in a grammar typically appear as symbols defined by a seuquence of alternatives (e.g. expression, term, factor) can safely (i.e. without loss of information) be replaced in the syntax-tree by the respective concrete alternative as long as the alternatives do not overlap with those of any other collective term. Keep that in mind when adding symbols to the "@hide"-directive.
 
-You can easily check that all these precepts have been observed in the last version of the grammar which allowed us to drastically streamline the resulting syntax-tree by adding a few "crude" rules in form of directives at the top. Now, there is one last rule that, however, instead of trimming the tree, simplifies writing the grammar by reducing visual noise. You might have noticed that after ever string literal the tilde sign `~` for insignificant whitespace follows. Specifically, for string-literals DHParser allows adding the directive `@literalws = right` which instructs DHParser when generating a parser from a grammar to assume insignificant whitespace on the right-hand side of every string-literal. Thus, our fully streamlined grammar reads:
+You can easily check that all these precepts have been observed in the last version of the grammar. This allowed us to drastically streamline the resulting syntax-tree by adding a few "crude" rules in the form of directives at the top. Now, there is still one property of this grammar left that we need to check, namely that a parser generated from this grammar also respects the law of associativity, e.g. a + b + c == (a + b) + c:
 
-      @literalws = right                  # silently eat whitespace to the right of any string literal
-      @drop = whitespace, strings         # drop insignificant whitespace and all string literals
-      @hide = expression, term, factor, group # replace these by their (single) child
-      
-      formulae = ~ expression { expression }
-      
-      expression = addition | subtraction | term
-        addition    = expression "+" term
-        subtraction = expression "-" term
-      
-      term       = multiplication | division | factor
-        multiplication = term "*" factor
-        division       = term ":" factor
-      
-      factor = group | number
-        group  = "(" expression ")"
-        number = /0/~ | /[1-9]/ { /[0-9]/ } ~
-
-Before we round up our crash course with an exercise for ambitious readers, let's verify that a parser generated from this grammar also respects the law of associativity, e.g. a + b + c == (a + b) + c:
-
-    # python arithmetic4Parser.py --parse "5 - 2 - 1"
+    $ python arithmetic4Parser.py --parse "5 - 2 - 1"
     (formulae 
       (subtraction 
         (subtraction 
@@ -420,28 +400,28 @@ Before we round up our crash course with an exercise for ambitious readers, let'
 
 As we can see from the tree-structure, the parser reads the formula 5 - 2 - 1 correctly as (5 - 2 - 1). Can you guess, why? If not, consider this: You might have noticed that the rules for addition, subtraction, multiplication and division have been defined "left-recursively" in the grammar. What if you had defined them right-recursively? You can change the grammar and subsitute `addtion =  expression "+" term` by `addition = term "+" expression` and the same for all other basic arithmetic operations. Try it and see how this changes the shape of the syntax-tree. 
 
-Actually, not all parser generators even allow left-recursive grammars. Some parser-generators complain if presented with a left-recursive grammar, other do not complain but get caught up in an infinite loop when parsing. If you use a parser-generator of this kind, you'll have to make sure that the grammar is neither directly nor indirectly left-recursive and then reshapre the snytax-tree later. Luckily, any left-recursive grammar can be rewritten as a right-recursive grammar, ablbeit, not without affecting the shape of the syntax-trees produced by that grammar.
+Actually, not all parser generators even allow left-recursive grammars. Some parser-generators complain if presented with a left-recursive grammar, others do not complain but get caught up in an infinite loop while parsing. Luckily, any left-recursive grammar can be rewritten without left-recursion. You'll find the general algorithm and proof for that in the textbooks on compiler-construction. Keep in mind, though, that this inevitably affects the shape of the syntax-trees produced by that grammar. So, if you avoid left-recursion when writing a grammar, more burden might be placed on the re-shaping of the syntax-tree after the parsing-stage.
 
-Finally, there is the promised exercise: Extend the grammar, so that is also supports the "power to"-operation. Use the `^`-sign for "power to" so that "2^4" is to be understood as "2 to the power of 8". When extending the grammar, make sure that the power-operator `^` has a higher precedence than "*" and "/" and thus also than "+" and "-". Make also sure that you get the associativity of the power operator, which - contrary to that of the basic arithmetic operations - is right-associative, is reflected in the syntax tree. Before you set out to extend the grammar, you might think of test-cases (formulae) which allow you to verify this (Test-Driven-Development). 
+If you would like to experiment a little more with how the grammar and, in particular, left- or right-recursion affect the shape of the syntax-tree, try the following: Extend the grammar, so that is also supports the "power to"-operation. Use the `^`-sign for "power to" so that "2^4" is to be understood as "2 to the power of 8". When extending the grammar, make sure that the power-operator `^` has a higher precedence than "*" and "/" and thus also than "+" and "-". Make also sure that you get the associativity of the power operator, which - contrary to that of the basic arithmetic operations - is right-associative, is reflected in the syntax tree. Before you set out to extend the grammar, you might think of test-cases (formulae) which allow you to verify this (Test-Driven-Development). 
 
-To really be sure that the parser is correct, you might want to look at the following section, which explains how to evaluate abstract-syntax-trees. For then, you do not even neet to look at the resulting syntax-trees any nor, but can easily check if, say, the syntax-tree of the formula "5 - 2 - 1" is evaluated as 2 which is correct and not as 4.
+So far, we have only looked at the generated syntax-tree in order to check if our grammar is correct not only in the weak sense of matching all ond only valid formulae but also in the strong sense of producing syntax-trees that reflect the rules of our target domain, i.e. arithmetic formulae. But we have not even made the most obvious test, namely, that the calculations are correct that the formulae which our parser breaks down into its components represent. In order to do so, we need to "evaluate" the syntax-tree. How this can be done (there are many ways to do this!) is shown in the next section.
 
 ### Evaluating the syntax-tree
 
-What the *evaluation* of a syntax-tree means depends on the target domain (of course) and on the purpose. In the case of syntax-trees of arithmetic formulae, the most obvious purpose is calculating the numeric result of the formula. However, other purposes also make sense. For example, another kind of "evaluation" could consist in the re-serialization of the syntax-tree of an arithmetic calculation to a formula. Let's look at the calculation first. It's pretty straight forward if you know Python a little:
+What the *evaluation* of a syntax-tree means depends on the target domain (of course) and on the purpose. In the case of syntax-trees of arithmetic formulae, the most obvious purpose is calculating the numeric result of the formula. However, other purposes also make sense. For example, another kind of "evaluation" could consist in the re-serialization of the syntax-tree of an arithmetic calculation to a formula. Here we will only look at the calculation of the formula, which, admittedly, is much simpler than its re-serialization. It's pretty straight forward if you know Python a little:
 
-   # python
-   >>> from operators import add, sub, mul, floordiv
-   >>> from arithmetic4Parser import compile_snippet
-   >>> syntax_tree, errors = compile_snippet("2 + 4 * 3")
-   >>> actions = {'addition': add, 
-   ...            'subtraction': sub, 
-   ...            'multiplication': mul, 
-   ...            'division': floordiv,
-   ...            'number': int, 
-   ...            'formulae': lambda *f: f }
-   >>> syntax_tree.evaluate(actions)
-   14
+    $ python
+    >>> from operators import add, sub, mul, floordiv
+    >>> from arithmetic4Parser import compile_snippet
+    >>> syntax_tree, errors = compile_snippet("2 + 4 * 3")
+    >>> actions = {'addition': add, 
+    ...            'subtraction': sub, 
+    ...            'multiplication': mul, 
+    ...            'division': floordiv,
+    ...            'number': int, 
+    ...            'formulae': lambda *f: f }
+    >>> syntax_tree.evaluate(actions)
+    14
    
 And this is what the code above does:
 
@@ -449,11 +429,14 @@ And this is what the code above does:
 * From the generated arithmetic4Parser module the function compile_snippet is imported. Note that arithmetic4Parser.py does not necessarily need to be called from the command line as before, it can also be imported from another Python module, in an interactive Python session or from a Pyhton script. The function compile_snippet(str) is also generated and does just that: parse and compile a piece of source text and return the result and a (hopefully empty) list of errors. As in our case the compilation consists only of the parsing stage and that returns a snytax-tree, the result is the root-node of that syntax-tree, which is an instance of DHParser's nodetree.Node class.
 * Next, the function "compile_snippet" is called with our well-known formula. In this example, we do not check if there are any errors.
 * Now comes the "heart" of the evaluation. We define an "actions"-dictionary. As you might have noticed, the keys of this dictionary are the node-names of our syntax-tree which in turn are the names of all those rules in our grammar that are not "hidden" during parsing. For each rule / node-name a function is stored that takes as arguments the results of the evaluation of its children or, in case it is a leaf-node without children, the string-content of that node.  
+* Finally, we call the "evaluate"-method of the syntax_tree-object. What this method does is pretty simple: It walks through the tree depth-first and looks up the node-name for each node in the actions-dictionary and, finally, calls the function stored under this name. The Python-code of this method is trivial:
 
+      def evaluate(actions):
+          func = actions[self.name]
+          args = tuple(child.evaluate(actions) for child in self.children) \
+                 if self.children else (self.content,)
+          return func(*args)
 
+It should be emphasized that this is but the simplemost kind of an evaluation where the evaluation functions need to know only the results of the evaluation of their children but don't need to look into the tree-structure. For this more complicated case, you would need to pass along more information about the syntax-tree to the evaluation functions (as is done by the `evluate_path`-method of DHParser's `nodetree`-module). Also, do not confuse the evaluation of a syntax-tree with the transformation of the syntax-tree. The former requires just looking at the syntax-tree, and the result can be completely different from a tree-strcuture. The latter often, though not necessarily, changes the tree in-place and yields a transformed tree.
 
-TODO: Limitations of EBNF: 
-   - Only context-free languages
-   - Treats texts as streams of characters, ignores the 2-dimensional structure of a text document
-   - EBNF-Grammers have to be "programmed" rather than simply be specified (e.g. precedence of operators) 
 
