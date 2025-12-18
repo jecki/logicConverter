@@ -7,7 +7,7 @@ Parsing the Principia
 Introduction
 ------------
 
-When editing historical text from the fields of mathematics or formal logic, there sometimes arises the question of how to represent formulae that are written in a notation that is not commonly used, anymore. The simplest approach would, of course, to represent the formulae as is and leave the work to figure out the notation to the reader - the only question being whether your typesetting system supports these formulae. 
+When editing historical text from the fields of mathematics or formal logic, there sometimes arises the question of how to represent formulae that are written in a notation that is not commonly used, anymore. The simplest approach would, of course, to represent the formulae as is and leave the work to figure out the notation to the reader, the only question being whether your typesetting system supports these formulae. 
 
 However, readers might appreciate if the formulae are (also) presented in modern notation. And if you think of digital editions, it might ultimately be desirable to translate the historical formulae in a machine-readable format so that they can be processed by arbitrary computer systems, most notably proof assistants or computer algebra systems. 
 
@@ -425,10 +425,10 @@ What the *evaluation* of a syntax-tree means depends on the target domain (of co
    
 And this is what the code above does:
 
-* From the operators-module of Python's standard library the four basic arithmetic operations are imported as functions. (That is, because in Python you can assign functions to variables or dictionary values but not the arithmetic operators +,-,\*,/ directly!)
+* From the operators-module of Python's standard library the four basic arithmetic operations are imported as functions. (That is, because in Python you can assign functions to variables or dictionary values but not the arithmetic operators +, -, \*, / directly!)
 * From the generated arithmetic4Parser module the function compile_snippet is imported. Note that arithmetic4Parser.py does not necessarily need to be called from the command line as before, it can also be imported from another Python module, in an interactive Python session or from a Pyhton script. The function compile_snippet(str) is also generated and does just that: parse and compile a piece of source text and return the result and a (hopefully empty) list of errors. As in our case the compilation consists only of the parsing stage and that returns a snytax-tree, the result is the root-node of that syntax-tree, which is an instance of DHParser's nodetree.Node class.
 * Next, the function "compile_snippet" is called with our well-known formula. In this example, we do not check if there are any errors.
-* Now comes the "heart" of the evaluation. We define an "actions"-dictionary. As you might have noticed, the keys of this dictionary are the node-names of our syntax-tree which in turn are the names of all those rules in our grammar that are not "hidden" during parsing. For each rule / node-name a function is stored that takes as arguments the results of the evaluation of its children or, in case it is a leaf-node without children, the string-content of that node.  
+* Now comes the "heart" of the evaluation. We define an "actions"-dictionary. As you might have noticed, the keys of this dictionary are the node-names of our syntax-tree, which in turn are the names of all those rules in our grammar that are not "hidden" during parsing. For each rule/node-name a function is stored that takes as arguments the results of the evaluation of its children or, in case it is a leaf-node without children, the string-content of that node.  
 * Finally, we call the "evaluate"-method of the syntax_tree-object. What this method does is pretty simple: It walks through the tree depth-first and looks up the node-name for each node in the actions-dictionary and, finally, calls the function stored under this name. The Python-code of this method is trivial:
 
       def evaluate(actions):
@@ -439,4 +439,7 @@ And this is what the code above does:
 
 It should be emphasized that this is but the simplemost kind of an evaluation where the evaluation functions need to know only the results of the evaluation of their children but don't need to look into the tree-structure. For this more complicated case, you would need to pass along more information about the syntax-tree to the evaluation functions (as is done by the `evluate_path`-method of DHParser's `nodetree`-module). Also, do not confuse the evaluation of a syntax-tree with the transformation of the syntax-tree. The former requires just looking at the syntax-tree, and the result can be completely different from a tree-strcuture. The latter often, though not necessarily, changes the tree in-place and yields a transformed tree.
 
+### Summary and Old Folk Wisdom about Formal Grammars
 
+* Formal grammars specify the syntax of formal languages. For any string of characters ("document") they allow to decide whether it is syntactically correct, according to the grammar, or not. If this is the case, we say that the document is a *valid document* in the language that the grammar describes, or that the grammar "matches" the document. If a document is not syntactically correct according to the document, we say that it is "invalid" or that the grammar "fails" the document. 
+* The same syntax can be described by different grammars. Here, we understand syntax "extensionally" as the set of valid documents. We can say, two grammars are weakly equivalent, if both 
