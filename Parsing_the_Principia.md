@@ -366,7 +366,7 @@ The first line contains a "directive" that instructs the parser to drop two clas
 
 The "@hide"-directive in the second line instructs the parser to replace the nodes stemming from any of the particular rules that are listed on the right-hand side by their content if their content is either a single child or, in the case of a leaf-node, pure text-content. In fact, DHParser already applies this rule to all "anonymous" nodes (i.e. nodes that are not directly attached to a symbol of the grammar and the name of which is, therefore, a generic name preceeded by a ":") If you look at the syntax-tree, carefully, you may notice that the very last "number"-node in the tree differs from the other number nodes, in that it contains its value directly. Because there was no white space at the end of the formula, the single ":Regex"-node it would have contained was replaced by its content, i.e. the number "3". Once we have the parser instructed to drop all ":Whitespace"-nodes, the other number-nodes will look the same. 
 
-The most important difference between the ”@drop"- and the "@hide"-directive is that the former drops the node *and* its content, whereas the latter only removes intermediary nodes but retains the content. In any case, resulting syntax-tree is much more compact and also more readable:
+The most important difference between the ”@drop"- and the "@hide"-directive is that the former drops the node *and* its content, whereas the latter only removes intermediary nodes but retains the content. In any case, the resulting syntax-tree is much more compact and also more readable:
 
     $ dhparser arithmetic4.ebnf
     $ python arithmetic4Parser.py --parse "2 + 4 * 3"
