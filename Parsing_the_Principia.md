@@ -35,7 +35,7 @@ also type `/` instead of the colon `:`, but we'll leave the colon `:` here, for 
 
 ### Abstract syntax trees of arithmetic formulae
 
-What we need, if we want to make the formulae machine-readable is a parser that reads those formulae and a converter that turns them into a data-structure that is directly processable by the computer and which is called the "syntax tree" of the formula. You might actually also remember this from school, though probably under a different name. In German schools this is called "Termgliederung". (Let me at this point express my gratitude to my math teacher from school, Dr. Frederich, who has taught me this and many other beautiful things about mathematics.) Now, what does the "Termgliederung" of these two formulae look like (I hope you appreciate a bit of ascii art):
+What we need, if we want to make the formulae machine-readable is a parser that reads those formulae and a converter that turns them into a data-structure that is directly processable by the computer and which is called the "syntax tree" of the formula. You might actually also remember this from school, though probably under a different name. My highschool math-teacher, Dr. Frederichs, "Termgliederung", taught us this structure under the name "Termgliederung". (Thank you, Herr Frederich!) Now, what does the "Termgliederung" of these two formulae look like (I hope you appreciate a bit of ascii art):
 
     2 + 4 * 3
     |   \.  /
@@ -67,7 +67,6 @@ graph TD
     one["1"]        --> minus["-"]
     minus["-"]      --> div[":"]
 ```
-
 
 As you can can see, the "Termgliederung" looks like an upside down tree. In this case it is even a binary tree, but this merely reflects the contingent fact that all relations that we deal with in this trivial example, i.e. `+`, `-`, `*`, `:`, are binary relations. Generally speaking, the syntactical structure of any formula is a tree-structure that consists of "nodes" and "branches" and where every node can have an arbitrary number of "children", a "child" being a node that is directly connected via a branch to its "parent" node. (You can think of a "node" as a point where a tree branches out.)
 
@@ -201,6 +200,8 @@ Let's pause for a moment and reflect on what we have achieved by writing down th
 
 However, a grammar does not determine the syntax-tree of a language unambiguously. While it is true that one and the same grammar always yields one and the same syntax tree for the same valid document in a formal language, the just noted fact that different grammars can describe one and the same language implies that a grammar does not determine the structure of the syntax trees of a language completely. Also, grammars do not say anything about the *meaning* of the statements in a formal language. Formal grammars are about syntax, not semantics. 
 
+Mind that not all formal languages can be described by EBNF grammars. For example, formal languages that allow (re-)defining their own syntax, like TeX, cannot be described by EBNF grammars in their entirety at all, although fixed subsets like LaTeX can. Also, because EBNF-grammars treat text as a one-dimensional sequence of characters rather than a two-dimensional matrix of characters (on a piece of paper or on a screen), they cannot capture structures that hinge on the two-dimensional representaion of text, such as indented text like Python-code or quoted EMail-bodies. However, a preprocessor can be used to add beginning and ending markers at the necessary places to allow parsing it with an EBNF-based parser.
+
 We will not delve into this topic deeper, here. Instead, we will next construct a grammar for a less trivial case, namely, that of arithmetic formulae with all four basic arithmetic operations and of arbitrary size and complexity.
 
 
@@ -320,9 +321,9 @@ A few things have changed: There is a single definition for each one of the four
 
 As before, the definitions for multiplication and division are nested inside the definitions for addition and subtraction - only this time the nesting is indirect through the collective term "term". Also, the definitions for addition, subtraction, mulitplication and division now capture the left-associativity of these arithmetic operation (which might be a little hard to see until we actually make the experiment, below). 
 
-Finally, you might have noticed that in this version of the grammar, we have made liberal use of the tilde sign "~" which instructs the parser to "eat" (insignificant) whitespace. The purpose is to allow as to add whitespace to the left and right of each token as we please to render the formulae more readable. Now, you might wonder why, if we want to allow whitespace to the left *and* right of each token, the tile-sign in the grammar only appears on the right-hand side? Well, if you look closely, it also appears on the left-hand side, but only once at the very beginning in the definition of our topmost symbol "fomulae"! This is how the trick works: We add the whitespace-marke once on the left-hand side as the very first item of our grammar and then on the right-hand side of every atomic item (e.g. token-string-literal or regular expression) that occurs in the grammar. Because save for the first atomic item every string or regular expression follows some other string or regular expression, the whitespace on the right-hand side of the previous atomic item is automatically also the whitespace on the left-hand side of the next atomic item. We could also have done it the other way round and added the tilde sign once on the right-hand side at the very end of the first definition and then on the left-hand side of every atomic item. 
+Finally, you might have noticed that in this version of the grammar, we have made liberal use of the tilde sign "~" which instructs the parser to "eat" (insignificant) whitespace. The purpose is to allow adding whitespace to the left and right of each token as we please in order to render the formulae more readable. Now, you might wonder why, if we want to allow whitespace to the left *and* right of each token, the tile-sign in the grammar only appears on the right-hand side? Well, if you look carefully, it also appears on the left-hand side, but only once at the very beginning in the definition of our topmost symbol "fomulae"! This is how the trick works: We add the whitespace-marke once on the left-hand side as the very first item of our grammar and then on the right-hand side of every atomic item (e.g. token-string-literal or regular expression) that occurs in the grammar. Because save for the first atomic item every string or regular expression follows some other string or regular expression, the whitespace on the right-hand side of the previous atomic item is automatically also the whitespace on the left-hand side of the next atomic item. We could also have done it the other way round and added the tilde sign once on the right-hand side at the very end of the first definition and then on the left-hand side of every atomic item. 
 
-It is, of course, not forbidden to add the whitespace sign on both sides of every atomic item of the grammar, but this would only increase visual noise and actually make the parser a little slower. (Think about it: Because after having processed the whitespace on the right-hand side (or "succeding" whitespace) of an atomic item, the parser would check again for whitespace, this time whitespace preceeding the next proper item, at the following position. But this check is superfluous, because since all whitespace up to the next non-whitespace character has just been processed, there is no whitespace to be found at this position, anymore.)
+It is, of course, not forbidden to add the whitespace sign on both sides of every atomic item of the grammar, but this would only increase visual noise and actually make the parser a little slower. (Think about it: Because after having processed the whitespace on the right-hand side ("succeeding whitespace") of an atomic item, the parser would check again for whitespace, this time whitespace preceeding the next proper item, at the following position. But this check is superfluous, because since all whitespace up to the next non-whitespace character has just been processed, there is no whitespace to be found at this position, anyway.)
 
 Let's have a look at the syntax-tree for the formula "2 + 4 \* 3" again, first::
 
@@ -364,7 +365,7 @@ The first line contains a "directive" that instructs the parser to drop two clas
 
 The "@hide"-directive in the second line instructs the parser to replace the nodes stemming from any of the particular rules that are listed on the right-hand side by their content if their content is either a single child or, in the case of a leaf-node, pure text-content. In fact, DHParser already applies this rule to all "anonymous" nodes (i.e. nodes that are not directly attached to a symbol of the grammar and the name of which is, therefore, a generic name preceeded by a ":") If you look at the syntax-tree, carefully, you may notice that the very last "number"-node in the tree differs from the other number nodes, in that it contains its value directly. Because there was no white space at the end of the formula, the single ":Regex"-node it would have contained was replaced by its content, i.e. the number "3". Once we have the parser instructed to drop all ":Whitespace"-nodes, the other number-nodes will look the same. 
 
-The most important difference between the ”@drop"- and the "@hide"-directive is that the former drops the node *and* its content, whereas the latter only removes intermediary nodes but retains the content. The resulting syntax-tree is much more compact and also more readable:
+The most important difference between the ”@drop"- and the "@hide"-directive is that the former drops the node *and* its content, whereas the latter only removes intermediary nodes but retains the content. In any case, resulting syntax-tree is much more compact and also more readable:
 
     $ dhparser arithmetic4.ebnf
     $ python arithmetic4Parser.py --parse "2 + 4 * 3"
@@ -384,7 +385,7 @@ Now, you might wonder if such crude tree-trimming rules as "delete all nodes ste
 
 1. Use string literals for delimiters (like prentheses) or otherwise disposable tokens, only! For text content you'd like to keep in your syntax-tree, use regular expressions, even if in some cases a string literal would otherwise also have worked. (In our grammar in the definition of "number", we, therefore, used the regular expression /[0]/ in order to capture zero, even though "0" would have been slightly more straight forward.)
 
-2. Use the tilde-sign for insignificant whitespace only for whitespace you do not want to preserve. The difference between significant and insignificant whitespace is best demonstrated by an example: In an arithmetic formular like "2 + 3 * 4" the whitespace can typically be left out without changing the meaning. "2+4*3" is still the same formular. In plain text the whitespace that separates the words is not insignificant. After all, "A Bird Came Down the Walk" is not the same as "ABirdCameDowntheWalk".
+2. Use the tilde-sign for insignificant whitespace only for whitespace you do not want to preserve. The difference between significant and insignificant whitespace is best demonstrated by an example: In an arithmetic formular like "2 + 3 * 4" the whitespace can typically be left out without changing the meaning. "2+4*3" is still the same formular. In plain text, in contrast, the whitespace that separates the words is not insignificant. After all, "A Bird Came Down the Walk" is not the same as "ABirdCameDowntheWalk".
 
 3. Collective terms or summary concepts which in a grammar typically appear as symbols defined by a seuquence of alternatives (e.g. expression, term, factor) can safely (i.e. without loss of information) be replaced in the syntax-tree by the respective concrete alternative as long as the alternatives do not overlap with those of any other collective term. Keep that in mind when adding symbols to the "@hide"-directive.
 
@@ -426,17 +427,26 @@ What the *evaluation* of a syntax-tree means depends on the target domain (of co
 And this is what the code above does:
 
 * From the operators-module of Python's standard library the four basic arithmetic operations are imported as functions. (That is, because in Python you can assign functions to variables or dictionary values but not the arithmetic operators +,-,\*,/ directly!)
+
 * From the generated arithmetic4Parser module the function compile_snippet is imported. Note that arithmetic4Parser.py does not necessarily need to be called from the command line as before, it can also be imported from another Python module, in an interactive Python session or from a Pyhton script. The function compile_snippet(str) is also generated and does just that: parse and compile a piece of source text and return the result and a (hopefully empty) list of errors. As in our case the compilation consists only of the parsing stage and that returns a snytax-tree, the result is the root-node of that syntax-tree, which is an instance of DHParser's nodetree.Node class.
+
 * Next, the function "compile_snippet" is called with our well-known formula. In this example, we do not check if there are any errors.
+
 * Now comes the "heart" of the evaluation. We define an "actions"-dictionary. As you might have noticed, the keys of this dictionary are the node-names of our syntax-tree which in turn are the names of all those rules in our grammar that are not "hidden" during parsing. For each rule / node-name a function is stored that takes as arguments the results of the evaluation of its children or, in case it is a leaf-node without children, the string-content of that node.  
+
 * Finally, we call the "evaluate"-method of the syntax_tree-object. What this method does is pretty simple: It walks through the tree depth-first and looks up the node-name for each node in the actions-dictionary and, finally, calls the function stored under this name. The Python-code of this method is trivial:
 
-      def evaluate(actions):
+      def evaluate(self, actions):
           func = actions[self.name]
           args = tuple(child.evaluate(actions) for child in self.children) \
                  if self.children else (self.content,)
           return func(*args)
 
-It should be emphasized that this is but the simplemost kind of an evaluation where the evaluation functions need to know only the results of the evaluation of their children but don't need to look into the tree-structure. For this more complicated case, you would need to pass along more information about the syntax-tree to the evaluation functions (as is done by the `evluate_path`-method of DHParser's `nodetree`-module). Also, do not confuse the evaluation of a syntax-tree with the transformation of the syntax-tree. The former requires just looking at the syntax-tree, and the result can be completely different from a tree-strcuture. The latter often, though not necessarily, changes the tree in-place and yields a transformed tree.
+It should be emphasized that this is but the simplemost kind of an evaluation where the evaluation functions need to know only the results of the evaluation of their children but don't need to look into the tree-structure. Already for the (re-)serialization of an abstract syntax tree as an arithmetical formula, this is insufficient (can you guess, why?). For this more complicated case, you would need to pass along more information about the syntax-tree to the evaluation functions (as is done by the `evluate_path`-method of DHParser's `nodetree`-module). Also, do not confuse the evaluation of a syntax-tree with the transformation of the syntax-tree. The former requires just looking at the syntax-tree, and the result can be completely different from a tree-strcuture. The latter often, though not necessarily, changes the tree in-place and yields a transformed tree.
 
+### Summary
 
+* The structure of many formal languages can be expressed by a grammar in the extended Backus-Naur Form (EBNF).
+* From an EBNF-grammar a parser can be generated that can parse texts that adhere to the rules of the formal language into a concrete syntax tree (CST).
+* From the concrete sytnax tree an abstract syntax tree (AST) can be derived that expresses the structure of sentences of a formal language in a semantically meaningful way. (Well-written grammars yield concrete syntax trees that already come close to the intended abstract syntax trees.)
+* Abstract syntax trees can be used to "evaluate" the "meaning" or "content" of the statements (i.e. sentences) of a formal language. (In the case of arithmetic formulae the evaluation can simply be the calculation of the numeric result of a formula.)
