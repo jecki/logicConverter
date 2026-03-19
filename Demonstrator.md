@@ -32,7 +32,7 @@ could most probably be implemented without much effort
 8. modern MathML: The presentation form of the modern notation of 
    the same form in math ML (if Math ML should be supported)
 
-9. coq or any other computer algebra system that offers sufficient 
+9. lean, coq or any other computer algebra system that offers sufficient 
    support for formal logic to digest Carnap's formulae. (SageMath
    unfortunately does not.)
 
